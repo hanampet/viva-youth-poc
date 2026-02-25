@@ -105,8 +105,9 @@ export function useGeminiLive() {
         },
         onInterrupted: () => {
           // 사용자 인터럽트 감지 - AI 응답 중단됨
-          // 현재 스트리밍 중인 메시지를 완료 처리 (truncated)
+          // 현재 스트리밍 중인 메시지에 "..." 추가하고 완료 처리
           if (streamingMessageIdRef.current) {
+            updateMessageById(streamingMessageIdRef.current, '...');
             streamingMessageIdRef.current = null;
             addLog('GEMINI', 'AI interrupted by user');
           }
