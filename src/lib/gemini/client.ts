@@ -90,6 +90,26 @@ export class GeminiLiveClient {
             },
           },
         },
+        // NO_INTERRUPTION: AI 응답 중 사용자 발화해도 중단하지 않음
+        // 사용자 발화는 AI 턴 완료 후 처리됨
+        realtimeInputConfig: {
+          activityHandling: 'NO_INTERRUPTION',
+          automaticActivityDetection: {
+            disabled: false,
+            startOfSpeechSensitivity: 'START_SENSITIVITY_HIGH',
+            endOfSpeechSensitivity: 'END_SENSITIVITY_HIGH',
+          },
+        },
+        // 세션 복원 설정 (핸들이 있으면 이전 세션 복원)
+        ...(this.options.sessionHandle && {
+          sessionResumption: {
+            handle: this.options.sessionHandle,
+          },
+        }),
+        // 세션 복원 토큰 받기 위해 항상 설정
+        ...(!this.options.sessionHandle && {
+          sessionResumption: {},
+        }),
         // Enable audio transcript output (top-level, not in generationConfig)
         outputAudioTranscription: {},
         ...(this.options.systemPrompt && {
@@ -100,7 +120,7 @@ export class GeminiLiveClient {
       },
     };
 
-    console.log('[Gemini] Sending setup:', JSON.stringify(setupMessage, null, 2));
+    console.log('[Gemini] Sending setup with NO_INTERRUPTION mode');
     this.send(setupMessage);
   }
 
@@ -131,8 +151,23 @@ export class GeminiLiveClient {
 
       // Handle server content
       const serverContent = message as GeminiServerContent;
+
+      // Handle session resumption update (토큰 저장용)
+      if (serverContent.sessionResumptionUpdate) {
+        const { newHandle, resumable } = serverContent.sessionResumptionUpdate;
+        if (resumable && newHandle) {
+          this.options.onSessionUpdate?.(newHandle);
+        }
+      }
+
       if (serverContent.serverContent) {
-        const { modelTurn, outputTranscription, turnComplete } = serverContent.serverContent;
+        const { modelTurn, outputTranscription, turnComplete, interrupted } = serverContent.serverContent;
+
+        // Handle interrupted (NO_INTERRUPTION 모드에서도 알림은 옴)
+        if (interrupted) {
+          console.log('[Gemini] User interrupted detected');
+          this.options.onInterrupted?.();
+        }
 
         // Handle audio data and thinking from modelTurn
         if (modelTurn?.parts) {

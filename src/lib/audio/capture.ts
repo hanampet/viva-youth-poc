@@ -10,53 +10,9 @@ export class AudioCapture {
   private mediaStream: MediaStream | null = null;
   private options: AudioCaptureOptions;
   private isRunning = false;
-  private isMuted = false;
-  private audioBuffer: string[] = []; // muted 동안 음성 버퍼
 
   constructor(options: AudioCaptureOptions) {
     this.options = options;
-  }
-
-  mute(): void {
-    this.isMuted = true;
-    this.audioBuffer = []; // 버퍼 초기화
-  }
-
-  unmute(): void {
-    // 버퍼에 쌓인 음성을 실시간처럼 스트리밍 전송 (barge-in 감지를 위해)
-    const bufferLength = this.audioBuffer.length;
-    if (bufferLength > 0) {
-      console.log(`[AudioCapture] Streaming ${bufferLength} buffered chunks...`);
-      const buffer = [...this.audioBuffer];
-      this.audioBuffer = [];
-
-      // 청크 간격: AudioWorklet이 약 100ms마다 청크를 보내므로 비슷하게 맞춤
-      // 단, 너무 느리면 지연이 커지므로 20ms 간격으로 빠르게 전송
-      let index = 0;
-      const sendNext = () => {
-        if (index < buffer.length) {
-          this.options.onAudioData(buffer[index]);
-          index++;
-          setTimeout(sendNext, 20); // 20ms 간격
-        } else {
-          console.log(`[AudioCapture] Buffer streaming complete: ${bufferLength} chunks`);
-        }
-      };
-      sendNext();
-    }
-    this.isMuted = false;
-  }
-
-  clearBuffer(): void {
-    this.audioBuffer = [];
-  }
-
-  get muted(): boolean {
-    return this.isMuted;
-  }
-
-  get bufferSize(): number {
-    return this.audioBuffer.length;
   }
 
   async start(): Promise<void> {
@@ -82,13 +38,7 @@ export class AudioCapture {
 
         if (audioData) {
           const base64 = this.float32ToBase64PCM(audioData);
-          if (this.isMuted) {
-            // muted 상태: 버퍼에 저장
-            this.audioBuffer.push(base64);
-          } else {
-            // unmuted 상태: 즉시 전송
-            this.options.onAudioData(base64);
-          }
+          this.options.onAudioData(base64);
         }
 
         if (volume !== undefined) {
