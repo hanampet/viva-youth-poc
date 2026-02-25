@@ -33,6 +33,7 @@ export function useGeminiLive() {
   const speechRecognitionRef = useRef<BrowserSpeechRecognition | null>(null);
   const streamingMessageIdRef = useRef<string | null>(null);
   const thinkingRef = useRef<string>('');
+  const isInterruptedRef = useRef(false);  // 인터럽트 상태 (오디오 무시용)
 
   const connect = useCallback(async (options?: ConnectOptions) => {
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
@@ -75,6 +76,8 @@ export function useGeminiLive() {
         apiKey,
         systemPrompt: SYSTEM_PROMPT,
         onAudioData: (audioData) => {
+          // 인터럽트 상태면 오디오 무시
+          if (isInterruptedRef.current) return;
           playbackRef.current?.playBase64Audio(audioData);
         },
         onTextContent: (text) => {
@@ -98,10 +101,12 @@ export function useGeminiLive() {
         },
         onTurnComplete: () => {
           streamingMessageIdRef.current = null;
+          isInterruptedRef.current = false;  // 인터럽트 상태 리셋
           addLog('GEMINI', 'Turn complete');
         },
         onInterrupted: () => {
           // 사용자 인터럽트 감지 - AI 응답 중단됨
+          isInterruptedRef.current = true;  // 이후 오디오 무시
           // 현재 스트리밍 중인 메시지에 "..." 추가하고 완료 처리
           if (streamingMessageIdRef.current) {
             updateMessageById(streamingMessageIdRef.current, '...');
@@ -179,8 +184,9 @@ export function useGeminiLive() {
           } else {
             // Interim transcript - show in real-time
             setInterimTranscript(transcript);
-            // 사용자가 말하기 시작하면 AI 오디오 즉시 정지
+            // 사용자가 말하기 시작하면 AI 오디오 즉시 정지 + 이후 오디오 무시
             if (playbackRef.current?.playing) {
+              isInterruptedRef.current = true;  // 이후 도착하는 오디오 무시
               playbackRef.current.stop();
               addLog('AUDIO', 'AI audio stopped (user speaking)');
             }
