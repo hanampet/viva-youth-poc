@@ -23,22 +23,28 @@ export class AudioCapture {
   }
 
   unmute(): void {
-    // 버퍼에 쌓인 음성 일괄 전송
+    // 버퍼에 쌓인 음성을 실시간처럼 스트리밍 전송 (barge-in 감지를 위해)
     const bufferLength = this.audioBuffer.length;
     if (bufferLength > 0) {
-      console.log(`[AudioCapture] Flushing ${bufferLength} buffered audio chunks...`);
-      let sent = 0;
-      for (const base64Audio of this.audioBuffer) {
-        this.options.onAudioData(base64Audio);
-        sent++;
-      }
-      console.log(`[AudioCapture] Flush complete: ${sent}/${bufferLength} chunks sent`);
+      console.log(`[AudioCapture] Streaming ${bufferLength} buffered chunks...`);
+      const buffer = [...this.audioBuffer];
       this.audioBuffer = [];
-    } else {
-      console.log('[AudioCapture] No buffered audio to flush');
+
+      // 청크 간격: AudioWorklet이 약 100ms마다 청크를 보내므로 비슷하게 맞춤
+      // 단, 너무 느리면 지연이 커지므로 20ms 간격으로 빠르게 전송
+      let index = 0;
+      const sendNext = () => {
+        if (index < buffer.length) {
+          this.options.onAudioData(buffer[index]);
+          index++;
+          setTimeout(sendNext, 20); // 20ms 간격
+        } else {
+          console.log(`[AudioCapture] Buffer streaming complete: ${bufferLength} chunks`);
+        }
+      };
+      sendNext();
     }
     this.isMuted = false;
-    console.log('[AudioCapture] Unmuted, ready for realtime audio');
   }
 
   clearBuffer(): void {
