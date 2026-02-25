@@ -131,20 +131,11 @@ export class GeminiLiveClient {
       // Handle server content
       const serverContent = message as GeminiServerContent;
 
-      // Handle session resumption update (토큰 저장용)
-      if (serverContent.sessionResumptionUpdate) {
-        const { newHandle, resumable } = serverContent.sessionResumptionUpdate;
-        if (resumable && newHandle) {
-          this.options.onSessionUpdate?.(newHandle);
-        }
-      }
-
       if (serverContent.serverContent) {
         const { modelTurn, outputTranscription, turnComplete, interrupted } = serverContent.serverContent;
 
-        // Handle interrupted (NO_INTERRUPTION 모드에서도 알림은 옴)
+        // Handle interrupted (사용자가 AI를 끊었을 때)
         if (interrupted) {
-          console.log('[Gemini] User interrupted detected');
           this.options.onInterrupted?.();
         }
 

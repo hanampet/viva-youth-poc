@@ -9,7 +9,6 @@ import { SYSTEM_PROMPT } from '../constants/systemPrompts';
 
 export interface ConnectOptions {
   restoreContext?: RestoreContext;
-  sessionHandle?: string;  // 세션 복원용 핸들
 }
 
 export function useGeminiLive() {
@@ -34,7 +33,6 @@ export function useGeminiLive() {
   const speechRecognitionRef = useRef<BrowserSpeechRecognition | null>(null);
   const streamingMessageIdRef = useRef<string | null>(null);
   const thinkingRef = useRef<string>('');
-  const sessionHandleRef = useRef<string | null>(null);  // 세션 토큰 저장
 
   const connect = useCallback(async (options?: ConnectOptions) => {
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
@@ -72,11 +70,10 @@ export function useGeminiLive() {
       });
       await playbackRef.current.init();
 
-      // Initialize Gemini client with NO_INTERRUPTION mode
+      // Initialize Gemini client
       clientRef.current = new GeminiLiveClient({
         apiKey,
         systemPrompt: SYSTEM_PROMPT,
-        sessionHandle: options?.sessionHandle,  // 세션 복원용
         onAudioData: (audioData) => {
           playbackRef.current?.playBase64Audio(audioData);
         },
@@ -112,17 +109,12 @@ export function useGeminiLive() {
             addLog('GEMINI', 'AI interrupted by user');
           }
         },
-        onSessionUpdate: (handle) => {
-          // 세션 토큰 저장 (재연결 시 사용)
-          sessionHandleRef.current = handle;
-          console.log('[Session] Handle updated:', handle.slice(0, 20) + '...');
-        },
         onSetupComplete: () => {
           const setupCompleteTime = performance.now();
           addLog('GEMINI', `Setup complete (${((setupCompleteTime - connectStartTime) / 1000).toFixed(2)}s)`);
 
           // AI가 먼저 말하기 시작하도록 트리거 (컨텍스트 복원이 아닌 경우에만)
-          if (!options?.restoreContext && !options?.sessionHandle) {
+          if (!options?.restoreContext) {
             setTimeout(() => {
               if (clientRef.current?.connected) {
                 clientRef.current.sendText('[세션 시작] 내담자가 XR 힐링룸에 입장하여 편안한 의자에 착석했습니다. 1단계(맞이)를 시작해주세요.');
@@ -156,7 +148,7 @@ export function useGeminiLive() {
 
       await clientRef.current.connect();
 
-      // Initialize audio capture (항상 Gemini에 전송 - NO_INTERRUPTION 모드)
+      // Initialize audio capture
       captureRef.current = new AudioCapture({
         onAudioData: (base64Audio) => {
           clientRef.current?.sendAudio(base64Audio);
@@ -246,11 +238,6 @@ export function useGeminiLive() {
     }
   }, [addMessage, addLog]);
 
-  // 현재 세션 핸들 가져오기 (재연결 시 사용)
-  const getSessionHandle = useCallback(() => {
-    return sessionHandleRef.current;
-  }, []);
-
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -265,7 +252,6 @@ export function useGeminiLive() {
     connect,
     disconnect,
     sendText,
-    getSessionHandle,
     isConnected: connectionStatus === 'connected',
     isConnecting: connectionStatus === 'connecting',
   };
