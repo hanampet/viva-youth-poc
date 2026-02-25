@@ -184,15 +184,14 @@ export function useGeminiLive() {
             addMessage('user', transcript);
             setInterimTranscript('');
             addLog('AUDIO', `User said: ${transcript}`);
-
-            // 사용자 발화 시 AI 오디오 정지 (텍스트는 계속 완성됨)
-            if (playbackRef.current?.playing) {
-              playbackRef.current.stop();
-              addLog('AUDIO', 'AI audio stopped (user spoke)');
-            }
           } else {
             // Interim transcript - show in real-time
             setInterimTranscript(transcript);
+            // 사용자가 말하기 시작하면 AI 오디오 즉시 정지
+            if (playbackRef.current?.playing) {
+              playbackRef.current.stop();
+              addLog('AUDIO', 'AI audio stopped (user speaking)');
+            }
           }
         },
         onStart: () => {},
