@@ -84,6 +84,9 @@ export function useGeminiLive() {
             // 새 스트리밍 시작 - 메시지 생성하고 ID 저장
             const id = addMessage('assistant', text, true);
             streamingMessageIdRef.current = id;
+            // AI 텍스트 응답 시작 → 마이크 mute (인터럽트 방지)
+            captureRef.current?.mute();
+            addLog('AUDIO', 'Mic muted (AI responding)');
           } else {
             // 기존 메시지에 텍스트 추가 (ID로 찾아서 업데이트)
             updateMessageById(streamingMessageIdRef.current, text);
@@ -103,6 +106,9 @@ export function useGeminiLive() {
         onTurnComplete: () => {
           console.log('[Streaming] Turn complete, messageId:', streamingMessageIdRef.current);
           streamingMessageIdRef.current = null;
+          // AI 텍스트 응답 완료 → 마이크 unmute (인터럽트 허용)
+          captureRef.current?.unmute();
+          addLog('AUDIO', 'Mic unmuted (AI turn complete)');
           addLog('GEMINI', 'Turn complete');
         },
         onSetupComplete: () => {
@@ -176,6 +182,11 @@ export function useGeminiLive() {
             addMessage('user', transcript);
             setInterimTranscript('');
             addLog('AUDIO', `User said: ${transcript}`);
+            // 사용자 발화 확정 시 AI 오디오 즉시 정지
+            if (playbackRef.current?.playing) {
+              playbackRef.current.stop();
+              addLog('AUDIO', 'AI audio stopped (user spoke)');
+            }
           } else {
             // Interim transcript - show in real-time
             setInterimTranscript(transcript);

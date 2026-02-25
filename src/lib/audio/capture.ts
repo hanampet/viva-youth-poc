@@ -10,9 +10,22 @@ export class AudioCapture {
   private mediaStream: MediaStream | null = null;
   private options: AudioCaptureOptions;
   private isRunning = false;
+  private isMuted = false;
 
   constructor(options: AudioCaptureOptions) {
     this.options = options;
+  }
+
+  mute(): void {
+    this.isMuted = true;
+  }
+
+  unmute(): void {
+    this.isMuted = false;
+  }
+
+  get muted(): boolean {
+    return this.isMuted;
   }
 
   async start(): Promise<void> {
@@ -36,7 +49,8 @@ export class AudioCapture {
       this.workletNode.port.onmessage = (event) => {
         const { audioData, volume } = event.data;
 
-        if (audioData) {
+        // muted 상태에서는 Gemini에 오디오 전송 안 함
+        if (audioData && !this.isMuted) {
           const base64 = this.float32ToBase64PCM(audioData);
           this.options.onAudioData(base64);
         }
