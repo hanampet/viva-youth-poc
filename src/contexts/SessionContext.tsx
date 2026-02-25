@@ -84,7 +84,7 @@ interface SessionContextValue extends SessionContextState {
   setSessionActive: (active: boolean) => void;
   setVideoPlaying: (playing: boolean) => void;
   setVolume: (volume: number) => void;
-  addMessage: (role: 'user' | 'assistant', content: string, isStreaming?: boolean) => string;
+  addMessage: (role: 'user' | 'assistant', content: string, isStreaming?: boolean, timestamp?: Date) => string;
   updateMessageById: (id: string, content: string) => void;
   setInterimTranscript: (transcript: string) => void;
   setConversationMode: (mode: string) => void;
@@ -123,13 +123,13 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const addMessage = useCallback(
-    (role: 'user' | 'assistant', content: string, isStreaming = false): string => {
+    (role: 'user' | 'assistant', content: string, isStreaming = false, timestamp?: Date): string => {
       const id = crypto.randomUUID();
       const message: ChatMessage = {
         id,
         role,
         content,
-        timestamp: new Date(),
+        timestamp: timestamp || new Date(),
         isStreaming,
       };
       dispatch({ type: 'ADD_MESSAGE', payload: message });

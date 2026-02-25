@@ -34,6 +34,7 @@ export function useGeminiLive() {
   const streamingMessageIdRef = useRef<string | null>(null);
   const thinkingRef = useRef<string>('');
   const isInterruptedRef = useRef(false);  // 인터럽트 상태 (오디오 무시용)
+  const userSpeechStartTimeRef = useRef<Date | null>(null);  // 사용자 발화 시작 시점
 
   const connect = useCallback(async (options?: ConnectOptions) => {
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
@@ -177,13 +178,19 @@ export function useGeminiLive() {
         language: 'ko-KR',
         onResult: (transcript, isFinal) => {
           if (isFinal) {
-            // Final transcript - add as user message
-            addMessage('user', transcript);
+            // Final transcript - add as user message (발화 시작 시점 타임스탬프 사용)
+            const speechStartTime = userSpeechStartTimeRef.current || new Date();
+            addMessage('user', transcript, false, speechStartTime);
             setInterimTranscript('');
+            userSpeechStartTimeRef.current = null;  // 리셋
             addLog('AUDIO', `User said: ${transcript}`);
           } else {
             // Interim transcript - show in real-time
             setInterimTranscript(transcript);
+            // 첫 interim일 때 발화 시작 시점 기록
+            if (!userSpeechStartTimeRef.current) {
+              userSpeechStartTimeRef.current = new Date();
+            }
             // 사용자가 말하기 시작하면 AI 오디오 즉시 정지 + 이후 오디오 무시
             if (playbackRef.current?.playing) {
               isInterruptedRef.current = true;  // 이후 도착하는 오디오 무시
