@@ -182,10 +182,17 @@ export function useGeminiLive() {
             addMessage('user', transcript);
             setInterimTranscript('');
             addLog('AUDIO', `User said: ${transcript}`);
-            // 사용자 발화 확정 시 AI 오디오 즉시 정지
+
+            // 사용자 발화 확정 시 즉시 인터럽트 처리
+            // 1. AI 오디오 정지
             if (playbackRef.current?.playing) {
               playbackRef.current.stop();
               addLog('AUDIO', 'AI audio stopped (user spoke)');
+            }
+            // 2. 마이크가 muted 상태면 즉시 unmute + 버퍼 전송
+            if (captureRef.current?.muted) {
+              captureRef.current.unmute();
+              addLog('AUDIO', 'Mic unmuted (user interrupt)');
             }
           } else {
             // Interim transcript - show in real-time
