@@ -49,7 +49,7 @@ export function useGeminiLive() {
     const connectStartTime = performance.now();
     addLog('SYSTEM', options?.restoreContext
       ? 'Reconnecting with context restoration...'
-      : 'Connecting to Gemini Live API (NO_INTERRUPTION mode)...');
+      : 'Connecting to Gemini Live API...');
 
     // 연결 시작 전 스트리밍 상태 리셋
     streamingMessageIdRef.current = null;
@@ -104,9 +104,12 @@ export function useGeminiLive() {
           addLog('GEMINI', 'Turn complete');
         },
         onInterrupted: () => {
-          // NO_INTERRUPTION 모드에서도 인터럽트 감지 알림은 옴
-          // 하지만 AI 응답은 계속 진행됨
-          addLog('GEMINI', 'User activity detected (NO_INTERRUPTION mode - AI continues)');
+          // 사용자 인터럽트 감지 - AI 응답 중단됨
+          // 현재 스트리밍 중인 메시지를 완료 처리 (truncated)
+          if (streamingMessageIdRef.current) {
+            streamingMessageIdRef.current = null;
+            addLog('GEMINI', 'AI interrupted by user');
+          }
         },
         onSessionUpdate: (handle) => {
           // 세션 토큰 저장 (재연결 시 사용)

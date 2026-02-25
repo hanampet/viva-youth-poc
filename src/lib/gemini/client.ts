@@ -90,10 +90,10 @@ export class GeminiLiveClient {
             },
           },
         },
-        // NO_INTERRUPTION: AI 응답 중 사용자 발화해도 중단하지 않음
-        // 사용자 발화는 AI 턴 완료 후 처리됨
+        // START_OF_ACTIVITY_INTERRUPTS (기본값): 사용자 발화 시 AI 즉시 중단
+        // 자연스러운 대화를 위해 인터럽트 허용
         realtimeInputConfig: {
-          activityHandling: 'NO_INTERRUPTION',
+          activityHandling: 'START_OF_ACTIVITY_INTERRUPTS',
           automaticActivityDetection: {
             disabled: false,
             startOfSpeechSensitivity: 'START_SENSITIVITY_HIGH',
