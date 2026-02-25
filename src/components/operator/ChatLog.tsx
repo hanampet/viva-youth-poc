@@ -36,7 +36,7 @@ export function ChatLog() {
           </div>
         ) : (
           <>
-            {messages.map((message) => (
+            {[...messages].sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime()).map((message) => (
               <div
                 key={message.id}
                 className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}

@@ -80,7 +80,6 @@ export class BrowserSpeechRecognition {
     this.recognition.lang = this.options.language || 'ko-KR';
 
     this.recognition.onstart = () => {
-      console.log('[STT] Started');
       this.isRunning = true;
       this.options.onStart?.();
     };
@@ -108,12 +107,10 @@ export class BrowserSpeechRecognition {
     };
 
     this.recognition.onend = () => {
-      console.log('[STT] Ended');
       this.isRunning = false;
 
       // Auto-restart if should continue
       if (this.shouldRestart) {
-        console.log('[STT] Restarting...');
         setTimeout(() => {
           if (this.shouldRestart) {
             this.recognition?.start();
@@ -125,7 +122,6 @@ export class BrowserSpeechRecognition {
     };
 
     this.recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-      console.error('[STT] Error:', event.error);
       // Don't report "no-speech" as error, just restart
       if (event.error !== 'no-speech' && event.error !== 'aborted') {
         this.options.onError?.(event.error);
