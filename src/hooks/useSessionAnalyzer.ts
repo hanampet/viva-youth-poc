@@ -19,12 +19,10 @@ export function useSessionAnalyzer() {
   const analyze = useCallback(async (thinking?: string) => {
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
     if (!apiKey || messages.length === 0 || isAnalyzingRef.current) {
-      console.log('[SessionAnalyzer] Skipping analysis:', { hasApiKey: !!apiKey, messageCount: messages.length, isAnalyzing: isAnalyzingRef.current });
       return;
     }
 
     isAnalyzingRef.current = true;
-    console.log('[SessionAnalyzer] Starting analysis...', { messageCount: messages.length, stage, thinking: thinking?.slice(0, 100) });
 
     try {
       const result = await analyzeSession(apiKey, {
@@ -32,8 +30,6 @@ export function useSessionAnalyzer() {
         currentStage: stage,
         thinking,
       });
-
-      console.log('[SessionAnalyzer] Analysis result:', result);
 
       if (!result) {
         isAnalyzingRef.current = false;

@@ -79,7 +79,6 @@ export function useGeminiLive() {
           playbackRef.current?.playBase64Audio(audioData);
         },
         onTextContent: (text) => {
-          console.log('[Streaming] messageId:', streamingMessageIdRef.current, 'text length:', text.length);
           if (!streamingMessageIdRef.current) {
             // 새 스트리밍 시작 - 메시지 생성하고 ID 저장
             const id = addMessage('assistant', text, true);
@@ -97,14 +96,11 @@ export function useGeminiLive() {
         },
         onThinkingComplete: () => {
           // Thinking 완료 시점 (첫 오디오 청크 수신)에 분석 시작
-          // 오디오 재생과 병렬로 분석 진행
-          console.log('[Streaming] Thinking complete, starting analysis');
           const thinking = thinkingRef.current;
           thinkingRef.current = '';
           analyzeRef.current(thinking);
         },
         onTurnComplete: () => {
-          console.log('[Streaming] Turn complete, messageId:', streamingMessageIdRef.current);
           streamingMessageIdRef.current = null;
           // AI 텍스트 응답 완료 → 마이크 unmute (인터럽트 허용)
           captureRef.current?.unmute();

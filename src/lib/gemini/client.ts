@@ -154,12 +154,10 @@ export class GeminiLiveClient {
 
         // Handle transcript of spoken audio
         if (outputTranscription?.text) {
-          console.log('[Gemini] Transcript:', outputTranscription.text);
           this.options.onTextContent?.(outputTranscription.text);
         }
 
         if (turnComplete) {
-          console.log('[Gemini] Turn complete');
           this.hasReceivedAudioThisTurn = false;  // 다음 턴을 위해 리셋
           this.options.onTurnComplete?.();
         }

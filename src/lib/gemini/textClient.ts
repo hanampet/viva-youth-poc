@@ -133,7 +133,6 @@ ${thinking ? `## AI Thinking\n${thinking.slice(0, 500)}` : ''}
     }
 
     const result = JSON.parse(text) as SessionAnalysis;
-    console.log('[TextLLM] Analysis result (raw):', result);
 
     // 단계 점프 방지: 한 단계씩만 진행 가능
     const resultStageInfo = SESSION_STAGES.find((s) => s.id === result.currentStage);
@@ -156,7 +155,6 @@ ${thinking ? `## AI Thinking\n${thinking.slice(0, 500)}` : ''}
       result.currentStage = 'HEALING_PREP';
     }
 
-    console.log('[TextLLM] Analysis result (validated):', result);
     return result;
   } catch (error) {
     console.error('[TextLLM] Analysis failed:', error);
