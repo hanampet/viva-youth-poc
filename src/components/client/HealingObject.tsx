@@ -1,6 +1,5 @@
 import { motion } from 'framer-motion';
 import { useSession } from '../../contexts/SessionContext';
-import { useState } from 'react';
 
 // Style 1: ChatGPT Voice Mode 스타일 - 흰색 배경 + 하늘색 수채화 구름
 function CloudOrb({ orbState, currentVolume, isSessionActive }: OrbProps) {
@@ -186,203 +185,6 @@ function CloudOrb({ orbState, currentVolume, isSessionActive }: OrbProps) {
   );
 }
 
-// Style 2: ChatGPT Style - 유체 모핑 + 하늘색/흰색
-function ChatGPTOrb({ orbState, currentVolume, isSessionActive }: OrbProps) {
-  const getScale = () => {
-    if (orbState === 'speaking') return 1 + currentVolume * 0.1;
-    if (orbState === 'listening' && currentVolume > 0.1) return 1 + currentVolume * 0.05;
-    return 1;
-  };
-
-  return (
-    <motion.div
-      className="relative w-48 h-48"
-      animate={{ scale: getScale() }}
-      transition={{ type: 'spring', stiffness: 200, damping: 20 }}
-    >
-      {/* Ambient glow */}
-      <motion.div
-        className="absolute -inset-8 rounded-full blur-3xl"
-        style={{ background: 'radial-gradient(circle, rgba(56,189,248,0.4) 0%, rgba(14,165,233,0.2) 50%, transparent 70%)' }}
-        animate={{
-          scale: isSessionActive ? [1, 1.08, 1] : 1,
-          opacity: orbState === 'speaking' ? [0.4, 0.6, 0.4] : [0.2, 0.3, 0.2],
-        }}
-        transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-      />
-
-      {/* Main orb */}
-      <div
-        className="absolute inset-0 rounded-full overflow-hidden"
-        style={{
-          background: 'linear-gradient(135deg, #7dd3fc 0%, #38bdf8 30%, #0ea5e9 60%, #0284c7 100%)',
-          boxShadow: '0 0 50px rgba(14,165,233,0.4)',
-        }}
-      >
-        {/* Inner moving gradient - creates fluid effect */}
-        <motion.div
-          className="absolute -inset-4"
-          style={{
-            background: 'radial-gradient(ellipse at 40% 40%, rgba(255,255,255,0.5) 0%, transparent 50%)',
-          }}
-          animate={{
-            x: isSessionActive ? [0, 10, 0, -10, 0] : 0,
-            y: isSessionActive ? [0, -8, 0, 8, 0] : 0,
-          }}
-          transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-        />
-
-        {/* Secondary fluid motion */}
-        <motion.div
-          className="absolute -inset-4"
-          style={{
-            background: 'radial-gradient(ellipse at 60% 60%, rgba(125,211,252,0.4) 0%, transparent 40%)',
-          }}
-          animate={{
-            x: isSessionActive ? [0, -8, 0, 8, 0] : 0,
-            y: isSessionActive ? [0, 6, 0, -6, 0] : 0,
-          }}
-          transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
-        />
-
-        {/* Top highlight */}
-        <motion.div
-          className="absolute top-4 left-6 w-16 h-10 rounded-full blur-lg"
-          style={{ background: 'rgba(255,255,255,0.5)' }}
-          animate={{
-            opacity: [0.4, 0.55, 0.4],
-          }}
-          transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
-        />
-
-        {/* Bottom reflection */}
-        <div className="absolute bottom-6 right-6 w-10 h-6 rounded-full bg-white/20 blur-md" />
-      </div>
-
-      {/* Speaking pulse rings */}
-      {orbState === 'speaking' && currentVolume > 0.1 && (
-        <>
-          {[...Array(2)].map((_, i) => (
-            <motion.div
-              key={`pulse-${i}`}
-              className="absolute inset-0 rounded-full border border-sky-300/50"
-              initial={{ scale: 1, opacity: 0.5 }}
-              animate={{ scale: 1.3 + i * 0.15, opacity: 0 }}
-              transition={{ duration: 1, delay: i * 0.25, repeat: Infinity }}
-            />
-          ))}
-        </>
-      )}
-    </motion.div>
-  );
-}
-
-// Style 3: Glassmorphism - 반투명 다중 레이어 + 블러
-function GlassOrb({ orbState, currentVolume, isSessionActive }: OrbProps) {
-  const getScale = () => {
-    if (orbState === 'speaking') return 1 + currentVolume * 0.12;
-    if (orbState === 'listening' && currentVolume > 0.1) return 1 + currentVolume * 0.06;
-    return 1;
-  };
-
-  return (
-    <motion.div
-      className="relative w-48 h-48"
-      animate={{ scale: getScale() }}
-      transition={{ type: 'spring', stiffness: 250, damping: 18 }}
-    >
-      {/* Background glow */}
-      <div className="absolute -inset-6 rounded-full bg-gradient-to-br from-violet-500/20 via-fuchsia-500/20 to-cyan-500/20 blur-2xl" />
-
-      {/* Outer glass layer */}
-      <motion.div
-        className="absolute inset-0 rounded-full"
-        style={{
-          background: 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)',
-          backdropFilter: 'blur(20px)',
-          border: '1px solid rgba(255,255,255,0.2)',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.1), inset 0 0 32px rgba(255,255,255,0.1)',
-        }}
-        animate={{
-          rotate: isSessionActive ? [0, 5, -5, 0] : 0,
-        }}
-        transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
-      />
-
-      {/* Middle glass layer */}
-      <motion.div
-        className="absolute inset-4 rounded-full"
-        style={{
-          background: 'linear-gradient(225deg, rgba(139,92,246,0.3) 0%, rgba(236,72,153,0.2) 50%, rgba(34,211,238,0.3) 100%)',
-          backdropFilter: 'blur(10px)',
-          border: '1px solid rgba(255,255,255,0.15)',
-        }}
-        animate={{
-          rotate: isSessionActive ? [0, -10, 10, 0] : 0,
-          scale: orbState === 'speaking' ? [1, 1.02, 1] : 1,
-        }}
-        transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-      />
-
-      {/* Inner core */}
-      <motion.div
-        className="absolute inset-10 rounded-full"
-        style={{
-          background: 'linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(139,92,246,0.4) 50%, rgba(236,72,153,0.3) 100%)',
-          boxShadow: 'inset 0 0 20px rgba(255,255,255,0.3)',
-        }}
-        animate={{
-          scale: [1, 1.1, 1],
-          opacity: orbState === 'speaking' ? [0.6, 0.9, 0.6] : [0.4, 0.6, 0.4],
-        }}
-        transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-      />
-
-      {/* Floating particles */}
-      {isSessionActive && [...Array(6)].map((_, i) => (
-        <motion.div
-          key={`particle-${i}`}
-          className="absolute w-2 h-2 rounded-full bg-white/40"
-          style={{
-            left: `${20 + (i % 3) * 30}%`,
-            top: `${20 + Math.floor(i / 3) * 40}%`,
-          }}
-          animate={{
-            y: [-5, 5, -5],
-            x: [-3, 3, -3],
-            opacity: [0.3, 0.6, 0.3],
-          }}
-          transition={{
-            duration: 2 + i * 0.3,
-            repeat: Infinity,
-            ease: 'easeInOut',
-            delay: i * 0.2,
-          }}
-        />
-      ))}
-
-      {/* Speaking waves */}
-      {orbState === 'speaking' && currentVolume > 0.1 && (
-        <>
-          {[...Array(3)].map((_, i) => (
-            <motion.div
-              key={`gwave-${i}`}
-              className="absolute inset-0 rounded-full"
-              style={{
-                border: '1px solid rgba(255,255,255,0.3)',
-                boxShadow: '0 0 10px rgba(139,92,246,0.3)',
-              }}
-              initial={{ scale: 1, opacity: 0.5 }}
-              animate={{ scale: 1.3 + i * 0.15, opacity: 0 }}
-              transition={{ duration: 1, delay: i * 0.15, repeat: Infinity }}
-            />
-          ))}
-        </>
-      )}
-    </motion.div>
-  );
-}
-
 interface OrbProps {
   orbState: string;
   currentVolume: number;
@@ -391,22 +193,9 @@ interface OrbProps {
 
 export function HealingObject() {
   const { orbState, currentVolume, isSessionActive } = useSession();
-  const [selectedStyle, setSelectedStyle] = useState<1 | 2 | 3>(1);
-
-  const renderOrb = () => {
-    const props = { orbState, currentVolume, isSessionActive };
-    switch (selectedStyle) {
-      case 1:
-        return <CloudOrb {...props} />;
-      case 2:
-        return <ChatGPTOrb {...props} />;
-      case 3:
-        return <GlassOrb {...props} />;
-    }
-  };
 
   return (
-    <div className="relative flex flex-col items-center gap-8">
+    <div className="relative flex flex-col items-center">
       {/* Orb container */}
       <div className="relative w-64 h-64 flex items-center justify-center">
         {/* Outer glow rings */}
@@ -431,7 +220,7 @@ export function HealingObject() {
           />
         ))}
 
-        {renderOrb()}
+        <CloudOrb orbState={orbState} currentVolume={currentVolume} isSessionActive={isSessionActive} />
 
         {/* State indicator */}
         <div className="absolute -bottom-2 flex items-center gap-2">
@@ -456,23 +245,6 @@ export function HealingObject() {
                   : '대기'}
           </span>
         </div>
-      </div>
-
-      {/* Style selector */}
-      <div className="flex gap-2">
-        {[1, 2, 3].map((num) => (
-          <button
-            key={num}
-            onClick={() => setSelectedStyle(num as 1 | 2 | 3)}
-            className={`w-8 h-8 rounded-full text-sm font-medium transition-all ${
-              selectedStyle === num
-                ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/30'
-                : 'bg-surface-200 text-surface-600 hover:bg-surface-300'
-            }`}
-          >
-            {num}
-          </button>
-        ))}
       </div>
     </div>
   );
