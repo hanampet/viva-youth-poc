@@ -191,8 +191,10 @@ export function useGeminiLive() {
             }
             // 2. 마이크가 muted 상태면 즉시 unmute + 버퍼 전송
             if (captureRef.current?.muted) {
+              const bufferSize = captureRef.current.bufferSize;
+              addLog('AUDIO', `Buffer size before unmute: ${bufferSize}`);
               captureRef.current.unmute();
-              addLog('AUDIO', 'Mic unmuted (user interrupt)');
+              addLog('AUDIO', `Mic unmuted (user interrupt), flushed ${bufferSize} chunks`);
             }
           } else {
             // Interim transcript - show in real-time

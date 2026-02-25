@@ -169,8 +169,19 @@ export class GeminiLiveClient {
     }
   }
 
+  private audioSendCount = 0;
+
   sendAudio(base64Audio: string): void {
-    if (!this.isSetupComplete || !this.ws) return;
+    if (!this.isSetupComplete || !this.ws) {
+      console.warn('[Gemini] Cannot send audio - setup:', this.isSetupComplete, 'ws:', !!this.ws);
+      return;
+    }
+
+    this.audioSendCount++;
+    // 100개마다 로그 (너무 많은 로그 방지)
+    if (this.audioSendCount % 100 === 0) {
+      console.log('[Gemini] Audio chunks sent:', this.audioSendCount);
+    }
 
     const message = {
       realtimeInput: {

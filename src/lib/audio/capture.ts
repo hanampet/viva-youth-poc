@@ -24,14 +24,21 @@ export class AudioCapture {
 
   unmute(): void {
     // 버퍼에 쌓인 음성 일괄 전송
-    if (this.audioBuffer.length > 0) {
-      console.log(`[AudioCapture] Flushing ${this.audioBuffer.length} buffered audio chunks`);
+    const bufferLength = this.audioBuffer.length;
+    if (bufferLength > 0) {
+      console.log(`[AudioCapture] Flushing ${bufferLength} buffered audio chunks...`);
+      let sent = 0;
       for (const base64Audio of this.audioBuffer) {
         this.options.onAudioData(base64Audio);
+        sent++;
       }
+      console.log(`[AudioCapture] Flush complete: ${sent}/${bufferLength} chunks sent`);
       this.audioBuffer = [];
+    } else {
+      console.log('[AudioCapture] No buffered audio to flush');
     }
     this.isMuted = false;
+    console.log('[AudioCapture] Unmuted, ready for realtime audio');
   }
 
   clearBuffer(): void {
