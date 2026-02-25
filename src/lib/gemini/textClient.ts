@@ -9,22 +9,22 @@ const LLM_CONTROLLED_STAGES = SESSION_STAGES.filter(
   (s) => s.id !== 'IDLE' && s.id !== 'OUTRO'
 );
 
-const ANALYSIS_PROMPT = `당신은 AI 심리 케어 세션의 진행 단계를 **예측**하는 분석가입니다.
+const ANALYSIS_PROMPT = `당신은 AI 심리 케어 세션의 진행 단계를 **파악**하는 분석가입니다.
 
 ## 세션 단계
 ${LLM_CONTROLLED_STAGES.map((s) => `${s.order}. ${s.id}: ${s.label} (${s.description})`).join('\n')}
 
 **주의: OUTRO(마무리) 단계는 운영자가 수동으로 전환합니다. 절대 OUTRO를 선택하지 마세요.**
 
-## 핵심: AI Thinking 기반 예측
-**AI의 thinking(내부 생각)을 보고 AI가 지금 어떤 단계를 진행하려는지 예측하세요.**
+## 핵심: AI Thinking 기반 단계 파악
+**AI의 thinking(내부 생각)을 보고 AI가 지금 어떤 단계를 진행하고 있는지 파악하세요.**
 - thinking에 "환영", "호흡", "상담 만족도" 언급 → WELCOME
 - thinking에 "마음 상태", "후련", "감정 해소" 언급 → EMOTION_RELEASE
 - thinking에 "처음과 비교", "변화", "전후" 언급 → DEEP_EXPLORATION
 - thinking에 "힐링 영상", "추천", "바다/숲/정원" 언급 → HEALING_PREP
 
 ## 분석 규칙
-1. **AI thinking이 가장 중요한 판단 기준** - AI가 무엇을 하려는지 예측
+1. **AI thinking이 가장 중요한 판단 기준** - AI가 무엇을 하고 있는지 파악
 2. **단계는 한 단계씩만 진행** - 건너뛰기 금지
 3. AI의 thinking이 있다면 한국어로 한 문장 요약
 4. **HEALING_PREP이 마지막** - 힐링 영상 추천 후 유지
@@ -94,12 +94,12 @@ export async function analyzeSession(
 - 현재 세션 단계: ${currentStage} (${currentInfo?.label})
 - 가능한 다음 단계: ${nextStageInfo ? `${nextStageInfo.id} (${nextStageInfo.label})` : '없음 (마지막 단계)'}
 
-${thinking ? `## AI Thinking (중요! 이것을 보고 예측하세요)\n${thinking.slice(0, 500)}` : ''}
+${thinking ? `## AI Thinking (중요! 이것을 보고 단계를 파악하세요)\n${thinking.slice(0, 500)}` : ''}
 
 ## 참고: 최근 대화
 ${conversationText}
 
-**AI의 thinking을 분석하여** AI가 지금 진행하려는 단계를 예측하세요.
+**AI의 thinking을 분석하여** AI가 지금 진행하고 있는 단계를 파악하세요.
 currentStage는 현재 단계(${currentStage}) 또는 다음 단계(${nextStageInfo?.id || currentStage}) 중 하나만 선택하세요.`;
 
   try {

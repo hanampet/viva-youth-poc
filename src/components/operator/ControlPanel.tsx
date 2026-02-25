@@ -18,7 +18,7 @@ export function ControlPanel() {
     messages,
   } = useSession();
 
-  const { connect, disconnect, isConnected } = useGeminiLive();
+  const { connect, disconnect } = useGeminiLive();
 
   const handleToggleSession = async () => {
     if (!isSessionActive) {
@@ -162,32 +162,6 @@ export function ControlPanel() {
           </div>
         </div>
 
-        {/* Quick actions */}
-        {isSessionActive && isConnected && (
-          <div className="pt-2 border-t border-surface-200">
-            <p className="text-xs text-surface-500 mb-2">빠른 단계 전환</p>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setStage('EMOTION_RELEASE')}
-                className="flex-1 px-2 py-1.5 bg-surface-200 hover:bg-surface-300 text-surface-700 rounded text-xs transition-colors"
-              >
-                마음 살핌
-              </button>
-              <button
-                onClick={() => setStage('DEEP_EXPLORATION')}
-                className="flex-1 px-2 py-1.5 bg-surface-200 hover:bg-surface-300 text-surface-700 rounded text-xs transition-colors"
-              >
-                변화 느끼기
-              </button>
-              <button
-                onClick={() => setStage('HEALING_PREP')}
-                className="flex-1 px-2 py-1.5 bg-surface-200 hover:bg-surface-300 text-surface-700 rounded text-xs transition-colors"
-              >
-                쉼 안내
-              </button>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
