@@ -90,27 +90,7 @@ export class GeminiLiveClient {
             },
           },
         },
-        // START_OF_ACTIVITY_INTERRUPTS (기본값): 사용자 발화 시 AI 즉시 중단
-        // 자연스러운 대화를 위해 인터럽트 허용
-        realtimeInputConfig: {
-          activityHandling: 'START_OF_ACTIVITY_INTERRUPTS',
-          automaticActivityDetection: {
-            disabled: false,
-            startOfSpeechSensitivity: 'START_SENSITIVITY_HIGH',
-            endOfSpeechSensitivity: 'END_SENSITIVITY_HIGH',
-          },
-        },
-        // 세션 복원 설정 (핸들이 있으면 이전 세션 복원)
-        ...(this.options.sessionHandle && {
-          sessionResumption: {
-            handle: this.options.sessionHandle,
-          },
-        }),
-        // 세션 복원 토큰 받기 위해 항상 설정
-        ...(!this.options.sessionHandle && {
-          sessionResumption: {},
-        }),
-        // Enable audio transcript output (top-level, not in generationConfig)
+        // Enable audio transcript output
         outputAudioTranscription: {},
         ...(this.options.systemPrompt && {
           systemInstruction: {
@@ -120,7 +100,6 @@ export class GeminiLiveClient {
       },
     };
 
-    console.log('[Gemini] Sending setup with NO_INTERRUPTION mode');
     this.send(setupMessage);
   }
 
