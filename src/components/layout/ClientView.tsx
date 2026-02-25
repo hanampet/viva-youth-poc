@@ -5,7 +5,7 @@ import { HealingObjectV2 } from '../client/HealingObjectV2';
 type ViewStyle = 'orb' | 'aurora';
 
 export function ClientView() {
-  const [viewStyle, setViewStyle] = useState<ViewStyle>('aurora');
+  const [viewStyle, setViewStyle] = useState<ViewStyle>('orb');
 
   return (
     <div className="w-1/2 flex flex-col relative overflow-hidden">
