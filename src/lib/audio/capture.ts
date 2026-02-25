@@ -11,6 +11,7 @@ export class AudioCapture {
   private options: AudioCaptureOptions;
   private isRunning = false;
   private isMuted = false;
+  private audioBuffer: string[] = []; // muted 동안 음성 버퍼
 
   constructor(options: AudioCaptureOptions) {
     this.options = options;
@@ -18,14 +19,31 @@ export class AudioCapture {
 
   mute(): void {
     this.isMuted = true;
+    this.audioBuffer = []; // 버퍼 초기화
   }
 
   unmute(): void {
+    // 버퍼에 쌓인 음성 일괄 전송
+    if (this.audioBuffer.length > 0) {
+      console.log(`[AudioCapture] Flushing ${this.audioBuffer.length} buffered audio chunks`);
+      for (const base64Audio of this.audioBuffer) {
+        this.options.onAudioData(base64Audio);
+      }
+      this.audioBuffer = [];
+    }
     this.isMuted = false;
+  }
+
+  clearBuffer(): void {
+    this.audioBuffer = [];
   }
 
   get muted(): boolean {
     return this.isMuted;
+  }
+
+  get bufferSize(): number {
+    return this.audioBuffer.length;
   }
 
   async start(): Promise<void> {
@@ -49,10 +67,15 @@ export class AudioCapture {
       this.workletNode.port.onmessage = (event) => {
         const { audioData, volume } = event.data;
 
-        // muted 상태에서는 Gemini에 오디오 전송 안 함
-        if (audioData && !this.isMuted) {
+        if (audioData) {
           const base64 = this.float32ToBase64PCM(audioData);
-          this.options.onAudioData(base64);
+          if (this.isMuted) {
+            // muted 상태: 버퍼에 저장
+            this.audioBuffer.push(base64);
+          } else {
+            // unmuted 상태: 즉시 전송
+            this.options.onAudioData(base64);
+          }
         }
 
         if (volume !== undefined) {
