@@ -35,6 +35,7 @@ export function useGeminiLive() {
   const thinkingRef = useRef<string>('');
   const isInterruptedRef = useRef(false);  // 인터럽트 상태 (오디오 무시용)
   const userSpeechStartTimeRef = useRef<Date | null>(null);  // 사용자 발화 시작 시점
+  const aiResponseStartTimeRef = useRef<Date | null>(null);  // AI 응답 시작 시점
 
   const connect = useCallback(async (options?: ConnectOptions) => {
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
@@ -83,8 +84,9 @@ export function useGeminiLive() {
         },
         onTextContent: (text) => {
           if (!streamingMessageIdRef.current) {
-            // 새 스트리밍 시작 - 메시지 생성하고 ID 저장
-            const id = addMessage('assistant', text, true);
+            // 새 스트리밍 시작 - 메시지 생성하고 ID 저장 (AI 응답 시작 시점 타임스탬프 사용)
+            const responseStartTime = aiResponseStartTimeRef.current || new Date();
+            const id = addMessage('assistant', text, true, responseStartTime);
             streamingMessageIdRef.current = id;
           } else {
             // 기존 메시지에 텍스트 추가 (ID로 찾아서 업데이트)
@@ -95,13 +97,15 @@ export function useGeminiLive() {
           thinkingRef.current += thinking;
         },
         onThinkingComplete: () => {
-          // Thinking 완료 시점 (첫 오디오 청크 수신)에 분석 시작
+          // Thinking 완료 시점 (첫 오디오 청크 수신) = AI 응답 시작 시점
+          aiResponseStartTimeRef.current = new Date();
           const thinking = thinkingRef.current;
           thinkingRef.current = '';
           analyzeRef.current(thinking);
         },
         onTurnComplete: () => {
           streamingMessageIdRef.current = null;
+          aiResponseStartTimeRef.current = null;  // AI 응답 시작 시점 리셋
           isInterruptedRef.current = false;  // 인터럽트 상태 리셋
           addLog('GEMINI', 'Turn complete');
         },
