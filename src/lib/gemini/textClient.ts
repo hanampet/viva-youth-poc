@@ -9,34 +9,30 @@ const LLM_CONTROLLED_STAGES = SESSION_STAGES.filter(
   (s) => s.id !== 'IDLE' && s.id !== 'OUTRO'
 );
 
-const ANALYSIS_PROMPT = `당신은 AI 심리 케어 세션의 대화를 분석하는 분석가입니다.
+const ANALYSIS_PROMPT = `당신은 AI 심리 케어 세션의 진행 단계를 **예측**하는 분석가입니다.
 
-## 세션 단계 (LLM이 판단하는 단계만)
+## 세션 단계
 ${LLM_CONTROLLED_STAGES.map((s) => `${s.order}. ${s.id}: ${s.label} (${s.description})`).join('\n')}
 
 **주의: OUTRO(마무리) 단계는 운영자가 수동으로 전환합니다. 절대 OUTRO를 선택하지 마세요.**
 
-## 대화 모드 (권장)
+## 핵심: AI Thinking 기반 예측
+**AI의 thinking(내부 생각)을 보고 AI가 지금 어떤 단계를 진행하려는지 예측하세요.**
+- thinking에 "환영", "호흡", "상담 만족도" 언급 → WELCOME
+- thinking에 "마음 상태", "후련", "감정 해소" 언급 → EMOTION_RELEASE
+- thinking에 "처음과 비교", "변화", "전후" 언급 → DEEP_EXPLORATION
+- thinking에 "힐링 영상", "추천", "바다/숲/정원" 언급 → HEALING_PREP
+
+## 분석 규칙
+1. **AI thinking이 가장 중요한 판단 기준** - AI가 무엇을 하려는지 예측
+2. **단계는 한 단계씩만 진행** - 건너뛰기 금지
+3. AI의 thinking이 있다면 한국어로 한 문장 요약
+4. **HEALING_PREP이 마지막** - 힐링 영상 추천 후 유지
+
+## 대화 모드
 - "상담": 일반적인 심리 상담 대화
 - "기술 문의": 시스템, AI, 기술에 대한 질문
-- "시스템 설명": AI가 자신이나 시스템을 설명
-- "잡담": 상담과 무관한 일상 대화
-- 기타 상황에 맞는 모드를 자유롭게 생성 가능
-
-## 중요 분석 규칙
-1. **단계는 한 단계씩만 진행** - 현재 단계에서 바로 다음 단계로만 넘어갈 수 있습니다. 건너뛰기 금지!
-   - 예: WELCOME(1) → EMOTION_RELEASE(2) ✓
-   - 예: WELCOME(1) → HEALING_PREP(4) ✗ (불가)
-2. **보수적으로 판단** - 확실히 다음 단계로 넘어갔을 때만 변경하세요
-3. AI의 발화 내용을 기준으로 단계를 판단하세요 (AI가 어떤 질문/안내를 했는지)
-4. AI의 thinking이 있다면 한국어로 한 문장 요약하세요
-5. **HEALING_PREP이 마지막** - 힐링 영상 추천 후에는 HEALING_PREP을 유지하세요
-
-## 단계별 판단 기준
-- WELCOME: AI가 환영 인사, 호흡 안내, 상담 만족도 질문을 하고 있음
-- EMOTION_RELEASE: AI가 "지금 마음 상태는 어떠신가요?" 류의 질문을 함
-- DEEP_EXPLORATION: AI가 "처음과 비교해서 어떻게 변했나요?" 류의 질문을 함
-- HEALING_PREP: AI가 힐링 영상(희망의 바다/치유의 숲/비 오는 정원)을 추천함`;
+- "잡담": 상담과 무관한 일상 대화`;
 
 const RESPONSE_SCHEMA = {
   type: 'object',
@@ -98,12 +94,13 @@ export async function analyzeSession(
 - 현재 세션 단계: ${currentStage} (${currentInfo?.label})
 - 가능한 다음 단계: ${nextStageInfo ? `${nextStageInfo.id} (${nextStageInfo.label})` : '없음 (마지막 단계)'}
 
-## 최근 대화
+${thinking ? `## AI Thinking (중요! 이것을 보고 예측하세요)\n${thinking.slice(0, 500)}` : ''}
+
+## 참고: 최근 대화
 ${conversationText}
 
-${thinking ? `## AI Thinking\n${thinking.slice(0, 500)}` : ''}
-
-위 대화를 분석해서 currentStage는 현재 단계(${currentStage}) 또는 다음 단계(${nextStageInfo?.id || currentStage}) 중 하나만 선택하세요.`;
+**AI의 thinking을 분석하여** AI가 지금 진행하려는 단계를 예측하세요.
+currentStage는 현재 단계(${currentStage}) 또는 다음 단계(${nextStageInfo?.id || currentStage}) 중 하나만 선택하세요.`;
 
   try {
     const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
