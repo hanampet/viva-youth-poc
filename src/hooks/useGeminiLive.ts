@@ -6,23 +6,29 @@ import { BrowserSpeechRecognition } from '../lib/audio/speechRecognition';
 import { useSession, type VADSensitivityLevel } from '../contexts/SessionContext';
 import { useSessionAnalyzer } from './useSessionAnalyzer';
 import { SYSTEM_PROMPT } from '../constants/systemPrompts';
-import type { VADConfig, VADSensitivity } from '../lib/gemini/types';
+import type { VADConfig } from '../lib/gemini/types';
 
 function getVADConfig(level: VADSensitivityLevel): VADConfig {
-  const sensitivityMap: Record<VADSensitivityLevel, VADSensitivity> = {
-    low: 'LOW',
-    default: 'UNSPECIFIED',
-    high: 'HIGH',
-  };
+  // low: 소음에 강함 (시작 감지만 둔감, 종료는 빠르게)
+  // high: 민감 (빠른 반응, 짧은 멈춤도 발화 종료)
+  if (level === 'low') {
+    return {
+      startOfSpeechSensitivity: 'LOW',        // 소음에 안 반응
+      endOfSpeechSensitivity: 'UNSPECIFIED',  // 종료는 기본값
+      silenceDurationMs: 500,                  // 0.5초 무음 후 응답
+    };
+  }
 
-  const sensitivity = sensitivityMap[level];
+  if (level === 'high') {
+    return {
+      startOfSpeechSensitivity: 'HIGH',
+      endOfSpeechSensitivity: 'HIGH',
+      silenceDurationMs: 200,
+    };
+  }
 
-  return {
-    startOfSpeechSensitivity: sensitivity,
-    endOfSpeechSensitivity: sensitivity,
-    // high: 빠른 응답 (짧은 멈춤도 발화 종료), low: 긴 멈춤 허용 (소음에 강함)
-    silenceDurationMs: level === 'high' ? 200 : level === 'low' ? 800 : undefined,
-  };
+  // default: 서버 기본값 사용
+  return {};
 }
 
 export interface ConnectOptions {
@@ -73,7 +79,8 @@ export function useGeminiLive() {
 
     // VAD 설정 로그
     const vadConfig = getVADConfig(vadSensitivity);
-    addLog('SYSTEM', `VAD 설정: ${vadSensitivity} (start: ${vadConfig.startOfSpeechSensitivity}, end: ${vadConfig.endOfSpeechSensitivity}, silence: ${vadConfig.silenceDurationMs ?? 'default'}ms)`);
+    const silenceStr = vadConfig.silenceDurationMs ? `${vadConfig.silenceDurationMs}ms` : 'default';
+    addLog('SYSTEM', `VAD: ${vadSensitivity} (silence: ${silenceStr})`);
 
     // 연결 시작 전 스트리밍 상태 리셋
     streamingMessageIdRef.current = null;
@@ -84,11 +91,9 @@ export function useGeminiLive() {
       playbackRef.current = new AudioPlayback({
         onPlaybackStart: () => {
           setOrbState('speaking');
-          addLog('AUDIO', 'AI speaking...');
         },
         onPlaybackEnd: () => {
           setOrbState('listening');
-          addLog('AUDIO', 'AI finished speaking');
         },
         onVolumeChange: (volume) => {
           setVolume(volume);
@@ -131,7 +136,6 @@ export function useGeminiLive() {
           streamingMessageIdRef.current = null;
           aiResponseStartTimeRef.current = null;  // AI 응답 시작 시점 리셋
           isInterruptedRef.current = false;  // 인터럽트 상태 리셋
-          addLog('GEMINI', 'Turn complete');
         },
         onInterrupted: () => {
           // 사용자 인터럽트 감지 - AI 응답 중단됨
@@ -152,7 +156,6 @@ export function useGeminiLive() {
             setTimeout(() => {
               if (clientRef.current?.connected) {
                 clientRef.current.sendText('[세션 시작] 내담자가 XR 힐링룸에 입장하여 편안한 의자에 착석했습니다. 1단계(맞이)를 시작해주세요.');
-                addLog('SYSTEM', 'AI 대화 시작 트리거');
               }
             }, 100);
           }
@@ -223,7 +226,6 @@ export function useGeminiLive() {
             if (playbackRef.current?.playing) {
               isInterruptedRef.current = true;  // 이후 도착하는 오디오 무시
               playbackRef.current.stop();
-              addLog('AUDIO', 'AI audio stopped (user speaking)');
             }
           }
         },
