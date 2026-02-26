@@ -7,7 +7,7 @@ import type {
 const GEMINI_WS_URL =
   'wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent';
 const DEFAULT_MODEL = 'models/gemini-2.5-flash-native-audio-preview-12-2025';
-const DEFAULT_VOICE = 'Kore';
+const DEFAULT_VOICE = 'Zephyr';
 
 export interface RestoreContext {
   messages: Array<{ role: 'user' | 'assistant'; content: string }>;
@@ -77,6 +77,8 @@ export class GeminiLiveClient {
   }
 
   private sendSetup(): void {
+    const vadConfig = this.options.vadConfig;
+
     const setupMessage: GeminiSetupMessage = {
       setup: {
         model: this.options.model || DEFAULT_MODEL,
@@ -90,6 +92,25 @@ export class GeminiLiveClient {
             },
           },
         },
+        // VAD configuration
+        ...(vadConfig && {
+          realtimeInputConfig: {
+            automaticActivityDetection: {
+              ...(vadConfig.startOfSpeechSensitivity && vadConfig.startOfSpeechSensitivity !== 'UNSPECIFIED' && {
+                startOfSpeechSensitivity: `START_SENSITIVITY_${vadConfig.startOfSpeechSensitivity}`,
+              }),
+              ...(vadConfig.endOfSpeechSensitivity && vadConfig.endOfSpeechSensitivity !== 'UNSPECIFIED' && {
+                endOfSpeechSensitivity: `END_SENSITIVITY_${vadConfig.endOfSpeechSensitivity}`,
+              }),
+              ...(vadConfig.silenceDurationMs && {
+                silenceDurationMs: vadConfig.silenceDurationMs,
+              }),
+              ...(vadConfig.prefixPaddingMs && {
+                prefixPaddingMs: vadConfig.prefixPaddingMs,
+              }),
+            },
+          },
+        }),
         // Enable audio transcript output
         outputAudioTranscription: {},
         ...(this.options.systemPrompt && {
@@ -100,6 +121,7 @@ export class GeminiLiveClient {
       },
     };
 
+    console.log('[Gemini] Setup message:', JSON.stringify(setupMessage, null, 2));
     this.send(setupMessage);
   }
 

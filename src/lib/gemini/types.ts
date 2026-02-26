@@ -1,3 +1,12 @@
+export type VADSensitivity = 'UNSPECIFIED' | 'LOW' | 'HIGH';
+
+export interface VADConfig {
+  startOfSpeechSensitivity?: VADSensitivity;
+  endOfSpeechSensitivity?: VADSensitivity;
+  silenceDurationMs?: number;
+  prefixPaddingMs?: number;
+}
+
 export interface GeminiSetupMessage {
   setup: {
     model: string;
@@ -9,6 +18,15 @@ export interface GeminiSetupMessage {
             voiceName: string;
           };
         };
+      };
+    };
+    realtimeInputConfig?: {
+      automaticActivityDetection: {
+        disabled?: boolean;
+        startOfSpeechSensitivity?: string;
+        endOfSpeechSensitivity?: string;
+        silenceDurationMs?: number;
+        prefixPaddingMs?: number;
       };
     };
     outputAudioTranscription?: Record<string, never>;
@@ -72,6 +90,7 @@ export interface GeminiClientOptions {
   model?: string;
   voiceName?: string;
   systemPrompt?: string;
+  vadConfig?: VADConfig;
   onAudioData?: (audioData: string) => void;
   onTextContent?: (text: string) => void;
   onThinking?: (thinking: string) => void;

@@ -3,11 +3,14 @@ import type { SessionStage, ConnectionStatus, OrbState, SessionState } from '../
 import type { ChatMessage } from '../types/chat';
 import type { LogEntry, LogCategory } from '../types/log';
 
+export type VADSensitivityLevel = 'low' | 'default' | 'high';
+
 interface SessionContextState extends SessionState {
   messages: ChatMessage[];
   logs: LogEntry[];
   interimTranscript: string;
   conversationMode: string;
+  vadSensitivity: VADSensitivityLevel;
 }
 
 type SessionAction =
@@ -21,6 +24,7 @@ type SessionAction =
   | { type: 'UPDATE_MESSAGE_BY_ID'; payload: { id: string; content: string } }
   | { type: 'SET_INTERIM_TRANSCRIPT'; payload: string }
   | { type: 'SET_CONVERSATION_MODE'; payload: string }
+  | { type: 'SET_VAD_SENSITIVITY'; payload: VADSensitivityLevel }
   | { type: 'ADD_LOG'; payload: LogEntry }
   | { type: 'CLEAR_MESSAGES' }
   | { type: 'CLEAR_LOGS' };
@@ -36,6 +40,7 @@ const initialState: SessionContextState = {
   logs: [],
   interimTranscript: '',
   conversationMode: '상담',
+  vadSensitivity: 'low',  // 기본값: 소음에 덜 민감
 };
 
 function sessionReducer(state: SessionContextState, action: SessionAction): SessionContextState {
@@ -66,6 +71,8 @@ function sessionReducer(state: SessionContextState, action: SessionAction): Sess
       return { ...state, interimTranscript: action.payload };
     case 'SET_CONVERSATION_MODE':
       return { ...state, conversationMode: action.payload };
+    case 'SET_VAD_SENSITIVITY':
+      return { ...state, vadSensitivity: action.payload };
     case 'ADD_LOG':
       return { ...state, logs: [...state.logs.slice(-100), action.payload] };
     case 'CLEAR_MESSAGES':
@@ -88,6 +95,7 @@ interface SessionContextValue extends SessionContextState {
   updateMessageById: (id: string, content: string) => void;
   setInterimTranscript: (transcript: string) => void;
   setConversationMode: (mode: string) => void;
+  setVadSensitivity: (level: VADSensitivityLevel) => void;
   addLog: (category: LogCategory, message: string) => void;
   clearMessages: () => void;
   clearLogs: () => void;
@@ -150,6 +158,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'SET_CONVERSATION_MODE', payload: mode });
   }, []);
 
+  const setVadSensitivity = useCallback((level: VADSensitivityLevel) => {
+    dispatch({ type: 'SET_VAD_SENSITIVITY', payload: level });
+  }, []);
+
   const addLog = useCallback((category: LogCategory, message: string) => {
     const log: LogEntry = {
       id: crypto.randomUUID(),
@@ -180,6 +192,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     updateMessageById,
     setInterimTranscript,
     setConversationMode,
+    setVadSensitivity,
     addLog,
     clearMessages,
     clearLogs,

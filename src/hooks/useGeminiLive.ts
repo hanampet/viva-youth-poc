@@ -3,9 +3,27 @@ import { GeminiLiveClient, type RestoreContext } from '../lib/gemini/client';
 import { AudioCapture } from '../lib/audio/capture';
 import { AudioPlayback } from '../lib/audio/playback';
 import { BrowserSpeechRecognition } from '../lib/audio/speechRecognition';
-import { useSession } from '../contexts/SessionContext';
+import { useSession, type VADSensitivityLevel } from '../contexts/SessionContext';
 import { useSessionAnalyzer } from './useSessionAnalyzer';
 import { SYSTEM_PROMPT } from '../constants/systemPrompts';
+import type { VADConfig, VADSensitivity } from '../lib/gemini/types';
+
+function getVADConfig(level: VADSensitivityLevel): VADConfig {
+  const sensitivityMap: Record<VADSensitivityLevel, VADSensitivity> = {
+    low: 'LOW',
+    default: 'UNSPECIFIED',
+    high: 'HIGH',
+  };
+
+  const sensitivity = sensitivityMap[level];
+
+  return {
+    startOfSpeechSensitivity: sensitivity,
+    endOfSpeechSensitivity: sensitivity,
+    // high: 빠른 응답 (짧은 멈춤도 발화 종료), low: 긴 멈춤 허용 (소음에 강함)
+    silenceDurationMs: level === 'high' ? 200 : level === 'low' ? 800 : undefined,
+  };
+}
 
 export interface ConnectOptions {
   restoreContext?: RestoreContext;
@@ -21,6 +39,7 @@ export function useGeminiLive() {
     setInterimTranscript,
     addLog,
     connectionStatus,
+    vadSensitivity,
   } = useSession();
 
   const { analyze } = useSessionAnalyzer();
@@ -52,6 +71,10 @@ export function useGeminiLive() {
       ? 'Reconnecting with context restoration...'
       : 'Connecting to Gemini Live API...');
 
+    // VAD 설정 로그
+    const vadConfig = getVADConfig(vadSensitivity);
+    addLog('SYSTEM', `VAD 설정: ${vadSensitivity} (start: ${vadConfig.startOfSpeechSensitivity}, end: ${vadConfig.endOfSpeechSensitivity}, silence: ${vadConfig.silenceDurationMs ?? 'default'}ms)`);
+
     // 연결 시작 전 스트리밍 상태 리셋
     streamingMessageIdRef.current = null;
     thinkingRef.current = '';
@@ -77,6 +100,7 @@ export function useGeminiLive() {
       clientRef.current = new GeminiLiveClient({
         apiKey,
         systemPrompt: SYSTEM_PROMPT,
+        vadConfig,
         onAudioData: (audioData) => {
           // 인터럽트 상태면 오디오 무시
           if (isInterruptedRef.current) return;
@@ -225,6 +249,7 @@ export function useGeminiLive() {
     updateMessageById,
     setInterimTranscript,
     addLog,
+    vadSensitivity,
   ]);
 
   const disconnect = useCallback(() => {

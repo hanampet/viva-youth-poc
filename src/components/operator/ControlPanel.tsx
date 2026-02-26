@@ -1,9 +1,12 @@
-import { useSession } from '../../contexts/SessionContext';
+import { useSession, type VADSensitivityLevel } from '../../contexts/SessionContext';
 import { useGeminiLive } from '../../hooks/useGeminiLive';
+import { RESUME_PROMPT } from '../../constants/systemPrompts';
 
-const RESUME_PROMPT = `[시스템 안내] 사용자가 힐링 영상 시청을 마쳤습니다.
-위의 대화 맥락을 참고하여, 따뜻한 마무리 인사를 해주세요.
-"오늘 이 시간이 당신의 마음에 작은 쉼표가 되었기를 바랍니다. 조심히 돌아가세요. 당신의 내일을 응원하겠습니다." 와 같은 마무리 멘트를 자연스럽게 전달해주세요.`;
+const VAD_OPTIONS: { value: VADSensitivityLevel; label: string }[] = [
+  { value: 'low', label: '낮음 (소음에 강함)' },
+  { value: 'default', label: '기본값' },
+  { value: 'high', label: '높음 (민감)' },
+];
 
 export function ControlPanel() {
   const {
@@ -16,6 +19,8 @@ export function ControlPanel() {
     clearMessages,
     addLog,
     messages,
+    vadSensitivity,
+    setVadSensitivity,
   } = useSession();
 
   const { connect, disconnect } = useGeminiLive();
@@ -119,15 +124,33 @@ export function ControlPanel() {
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
                 </svg>
-                일시정지
+                일시정지(영상재생)
               </>
             )}
           </button>
         </div>
 
-        {/* Connection status */}
+        {/* VAD Sensitivity & Connection status */}
         <div className="flex items-center justify-between p-3 rounded-lg bg-white border border-surface-200">
-          <span className="text-sm text-surface-600">Gemini 연결</span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-surface-500">음성 감도:</span>
+            <select
+              value={vadSensitivity}
+              onChange={(e) => setVadSensitivity(e.target.value as VADSensitivityLevel)}
+              disabled={isSessionActive}
+              className={`text-xs px-2 py-1 rounded border ${
+                isSessionActive
+                  ? 'bg-surface-100 text-surface-400 cursor-not-allowed border-surface-200'
+                  : 'bg-white text-surface-700 border-surface-300 hover:border-primary-400'
+              }`}
+            >
+              {VAD_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
           <div className="flex items-center gap-2">
             <span
               className={`w-2 h-2 rounded-full ${
