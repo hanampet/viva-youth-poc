@@ -5,6 +5,7 @@ import { AudioPlayback } from '../lib/audio/playback';
 import { BrowserSpeechRecognition } from '../lib/audio/speechRecognition';
 import { useSession, type VADSensitivityLevel } from '../contexts/SessionContext';
 import { useSessionAnalyzer } from './useSessionAnalyzer';
+import { waitForMonitorCleanup } from './useMicrophoneMonitor';
 import { SYSTEM_PROMPT } from '../constants/systemPrompts';
 import type { VADConfig } from '../lib/gemini/types';
 
@@ -40,12 +41,14 @@ export function useGeminiLive() {
     setConnectionStatus,
     setOrbState,
     setVolume,
+    setMicrophoneVolume,
     addMessage,
     updateMessageById,
     setInterimTranscript,
     addLog,
     connectionStatus,
     vadSensitivity,
+    selectedMicrophoneId,
   } = useSession();
 
   const { analyze } = useSessionAnalyzer();
@@ -185,12 +188,18 @@ export function useGeminiLive() {
 
       await clientRef.current.connect();
 
+      // 마이크 모니터링이 완전히 종료될 때까지 대기
+      await waitForMonitorCleanup();
+
       // Initialize audio capture
       captureRef.current = new AudioCapture({
         onAudioData: (base64Audio) => {
           clientRef.current?.sendAudio(base64Audio);
         },
         onVolumeChange: (volume) => {
+          // 마이크 입력 볼륨은 항상 업데이트 (AI 출력과 분리)
+          setMicrophoneVolume(volume);
+          // AI가 말하지 않을 때만 메인 볼륨 업데이트
           if (!playbackRef.current?.playing) {
             setVolume(volume);
           }
@@ -198,7 +207,13 @@ export function useGeminiLive() {
         onError: (error) => {
           addLog('ERROR', `Audio capture error: ${error.message}`);
         },
+        deviceId: selectedMicrophoneId || undefined,
       });
+
+      // 선택된 마이크 로그
+      if (selectedMicrophoneId) {
+        addLog('AUDIO', `Using selected microphone: ${selectedMicrophoneId.slice(0, 8)}...`);
+      }
 
       await captureRef.current.start();
       const micStartTime = performance.now();
@@ -247,11 +262,13 @@ export function useGeminiLive() {
     setConnectionStatus,
     setOrbState,
     setVolume,
+    setMicrophoneVolume,
     addMessage,
     updateMessageById,
     setInterimTranscript,
     addLog,
     vadSensitivity,
+    selectedMicrophoneId,
   ]);
 
   const disconnect = useCallback(() => {

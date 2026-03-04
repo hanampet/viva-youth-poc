@@ -2,6 +2,7 @@ export interface AudioCaptureOptions {
   onAudioData: (base64Audio: string) => void;
   onVolumeChange?: (volume: number) => void;
   onError?: (error: Error) => void;
+  deviceId?: string;  // 특정 마이크 선택 (빈 문자열이면 시스템 기본값)
 }
 
 export class AudioCapture {
@@ -17,13 +18,20 @@ export class AudioCapture {
 
   async start(): Promise<void> {
     try {
+      const audioConstraints: MediaTrackConstraints = {
+        sampleRate: 16000,
+        channelCount: 1,
+        echoCancellation: true,
+        noiseSuppression: true,
+      };
+
+      // 특정 마이크가 선택된 경우 deviceId 설정
+      if (this.options.deviceId) {
+        audioConstraints.deviceId = { exact: this.options.deviceId };
+      }
+
       this.mediaStream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          sampleRate: 16000,
-          channelCount: 1,
-          echoCancellation: true,
-          noiseSuppression: true,
-        },
+        audio: audioConstraints,
       });
 
       this.audioContext = new AudioContext({ sampleRate: 16000 });

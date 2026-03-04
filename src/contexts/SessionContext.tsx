@@ -5,12 +5,20 @@ import type { LogEntry, LogCategory } from '../types/log';
 
 export type VADSensitivityLevel = 'low' | 'default' | 'high';
 
+export interface AudioDevice {
+  deviceId: string;
+  label: string;
+}
+
 interface SessionContextState extends SessionState {
   messages: ChatMessage[];
   logs: LogEntry[];
   interimTranscript: string;
   conversationMode: string;
   vadSensitivity: VADSensitivityLevel;
+  selectedMicrophoneId: string;
+  availableMicrophones: AudioDevice[];
+  microphoneVolume: number;  // 마이크 입력 전용 볼륨
 }
 
 type SessionAction =
@@ -25,6 +33,9 @@ type SessionAction =
   | { type: 'SET_INTERIM_TRANSCRIPT'; payload: string }
   | { type: 'SET_CONVERSATION_MODE'; payload: string }
   | { type: 'SET_VAD_SENSITIVITY'; payload: VADSensitivityLevel }
+  | { type: 'SET_SELECTED_MICROPHONE'; payload: string }
+  | { type: 'SET_AVAILABLE_MICROPHONES'; payload: AudioDevice[] }
+  | { type: 'SET_MICROPHONE_VOLUME'; payload: number }
   | { type: 'ADD_LOG'; payload: LogEntry }
   | { type: 'CLEAR_MESSAGES' }
   | { type: 'CLEAR_LOGS' };
@@ -41,6 +52,9 @@ const initialState: SessionContextState = {
   interimTranscript: '',
   conversationMode: '상담',
   vadSensitivity: 'low',  // 기본값: 소음에 덜 민감
+  selectedMicrophoneId: '',  // 빈 문자열 = 시스템 기본값
+  availableMicrophones: [],
+  microphoneVolume: 0,
 };
 
 function sessionReducer(state: SessionContextState, action: SessionAction): SessionContextState {
@@ -73,6 +87,12 @@ function sessionReducer(state: SessionContextState, action: SessionAction): Sess
       return { ...state, conversationMode: action.payload };
     case 'SET_VAD_SENSITIVITY':
       return { ...state, vadSensitivity: action.payload };
+    case 'SET_SELECTED_MICROPHONE':
+      return { ...state, selectedMicrophoneId: action.payload };
+    case 'SET_AVAILABLE_MICROPHONES':
+      return { ...state, availableMicrophones: action.payload };
+    case 'SET_MICROPHONE_VOLUME':
+      return { ...state, microphoneVolume: action.payload };
     case 'ADD_LOG':
       return { ...state, logs: [...state.logs.slice(-100), action.payload] };
     case 'CLEAR_MESSAGES':
@@ -96,6 +116,9 @@ interface SessionContextValue extends SessionContextState {
   setInterimTranscript: (transcript: string) => void;
   setConversationMode: (mode: string) => void;
   setVadSensitivity: (level: VADSensitivityLevel) => void;
+  setSelectedMicrophone: (deviceId: string) => void;
+  setAvailableMicrophones: (devices: AudioDevice[]) => void;
+  setMicrophoneVolume: (volume: number) => void;
   addLog: (category: LogCategory, message: string) => void;
   clearMessages: () => void;
   clearLogs: () => void;
@@ -162,6 +185,18 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'SET_VAD_SENSITIVITY', payload: level });
   }, []);
 
+  const setSelectedMicrophone = useCallback((deviceId: string) => {
+    dispatch({ type: 'SET_SELECTED_MICROPHONE', payload: deviceId });
+  }, []);
+
+  const setAvailableMicrophones = useCallback((devices: AudioDevice[]) => {
+    dispatch({ type: 'SET_AVAILABLE_MICROPHONES', payload: devices });
+  }, []);
+
+  const setMicrophoneVolume = useCallback((volume: number) => {
+    dispatch({ type: 'SET_MICROPHONE_VOLUME', payload: volume });
+  }, []);
+
   const addLog = useCallback((category: LogCategory, message: string) => {
     const log: LogEntry = {
       id: crypto.randomUUID(),
@@ -193,6 +228,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     setInterimTranscript,
     setConversationMode,
     setVadSensitivity,
+    setSelectedMicrophone,
+    setAvailableMicrophones,
+    setMicrophoneVolume,
     addLog,
     clearMessages,
     clearLogs,
