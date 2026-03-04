@@ -30,6 +30,7 @@ export interface GeminiSetupMessage {
       };
     };
     outputAudioTranscription?: Record<string, never>;
+    inputAudioTranscription?: Record<string, never>;
     systemInstruction?: {
       parts: Array<{ text: string }>;
     };
@@ -69,6 +70,9 @@ export interface GeminiServerContent {
     outputTranscription?: {
       text: string;
     };
+    inputTranscription?: {
+      text: string;
+    };
     turnComplete?: boolean;
     interrupted?: boolean;
   };
@@ -93,6 +97,7 @@ export interface GeminiClientOptions {
   vadConfig?: VADConfig;
   onAudioData?: (audioData: string) => void;
   onTextContent?: (text: string) => void;
+  onInputTranscription?: (text: string) => void;
   onThinking?: (thinking: string) => void;
   onThinkingComplete?: () => void;
   onTurnComplete?: () => void;
