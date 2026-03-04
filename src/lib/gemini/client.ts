@@ -111,8 +111,10 @@ export class GeminiLiveClient {
             },
           },
         }),
-        // Enable audio transcript output
+        // Enable audio transcript output (AI 음성의 텍스트)
         outputAudioTranscription: {},
+        // Enable input audio transcription (사용자 음성의 텍스트)
+        inputAudioTranscription: {},
         ...(this.options.systemPrompt && {
           systemInstruction: {
             parts: [{ text: this.options.systemPrompt }],
@@ -154,7 +156,7 @@ export class GeminiLiveClient {
       const serverContent = message as GeminiServerContent;
 
       if (serverContent.serverContent) {
-        const { modelTurn, outputTranscription, turnComplete, interrupted } = serverContent.serverContent;
+        const { modelTurn, outputTranscription, inputTranscription, turnComplete, interrupted } = serverContent.serverContent;
 
         // Handle interrupted (사용자가 AI를 끊었을 때)
         if (interrupted) {
@@ -167,6 +169,7 @@ export class GeminiLiveClient {
             if (part.inlineData?.mimeType?.startsWith('audio/')) {
               // 첫 오디오 청크 수신 시 thinking 완료 알림
               if (!this.hasReceivedAudioThisTurn) {
+                console.log('[Gemini] First audio chunk received, calling onThinkingComplete');
                 this.hasReceivedAudioThisTurn = true;
                 this.options.onThinkingComplete?.();
               }
@@ -174,14 +177,23 @@ export class GeminiLiveClient {
             }
             // Capture thinking text
             if (part.text) {
+              console.log('[Gemini] Thinking text received');
               this.options.onThinking?.(part.text);
             }
           }
         }
 
-        // Handle transcript of spoken audio
+        // Handle transcript of AI's spoken audio
         if (outputTranscription?.text) {
           this.options.onTextContent?.(outputTranscription.text);
+        }
+
+        // Handle transcript of user's spoken audio (사용자 음성 텍스트)
+        if (inputTranscription) {
+          console.log('[Gemini] inputTranscription:', JSON.stringify(inputTranscription));
+        }
+        if (inputTranscription?.text) {
+          this.options.onInputTranscription?.(inputTranscription.text);
         }
 
         if (turnComplete) {

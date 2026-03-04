@@ -48,12 +48,15 @@ export class AudioPlayback {
 
     // Start playing after buffering enough data
     if (!this.hasStartedPlaying && this.pendingBuffers.length >= this.bufferThreshold) {
+      console.log('[AudioPlayback] Buffer threshold reached, starting playback');
       this.hasStartedPlaying = true;
       this.flushPendingBuffers();
     } else if (this.hasStartedPlaying) {
       // Already playing, schedule immediately
       this.scheduleBuffer(float32Data);
       this.pendingBuffers = [];
+    } else {
+      console.log('[AudioPlayback] Buffering...', this.pendingBuffers.length, '/', this.bufferThreshold);
     }
   }
 
