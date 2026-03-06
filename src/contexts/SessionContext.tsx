@@ -2,6 +2,7 @@ import { createContext, useContext, useReducer, useCallback, type ReactNode } fr
 import type { SessionStage, ConnectionStatus, OrbState, SessionState } from '../types/session';
 import type { ChatMessage } from '../types/chat';
 import type { LogEntry, LogCategory } from '../types/log';
+import type { ScenarioType } from '../constants/systemPrompts';
 
 export type VADSensitivityLevel = 'low' | 'default' | 'high';
 
@@ -20,6 +21,7 @@ interface SessionContextState extends SessionState {
   availableMicrophones: AudioDevice[];
   microphoneVolume: number;  // 마이크 입력 전용 볼륨
   isDebugMode: boolean;  // 디버그 모드 (운영자 패널 표시)
+  scenario: ScenarioType;  // 현재 시나리오
 }
 
 type SessionAction =
@@ -38,6 +40,7 @@ type SessionAction =
   | { type: 'SET_AVAILABLE_MICROPHONES'; payload: AudioDevice[] }
   | { type: 'SET_MICROPHONE_VOLUME'; payload: number }
   | { type: 'SET_DEBUG_MODE'; payload: boolean }
+  | { type: 'SET_SCENARIO'; payload: ScenarioType }
   | { type: 'ADD_LOG'; payload: LogEntry }
   | { type: 'CLEAR_MESSAGES' }
   | { type: 'CLEAR_LOGS' };
@@ -58,6 +61,7 @@ const initialState: SessionContextState = {
   availableMicrophones: [],
   microphoneVolume: 0,
   isDebugMode: false,  // 기본값: 사용자 화면만 표시
+  scenario: 'healing',  // 기본값: 힐링룸 시나리오
 };
 
 function sessionReducer(state: SessionContextState, action: SessionAction): SessionContextState {
@@ -98,6 +102,8 @@ function sessionReducer(state: SessionContextState, action: SessionAction): Sess
       return { ...state, microphoneVolume: action.payload };
     case 'SET_DEBUG_MODE':
       return { ...state, isDebugMode: action.payload };
+    case 'SET_SCENARIO':
+      return { ...state, scenario: action.payload };
     case 'ADD_LOG':
       return { ...state, logs: [...state.logs.slice(-100), action.payload] };
     case 'CLEAR_MESSAGES':
@@ -126,6 +132,7 @@ interface SessionContextValue extends SessionContextState {
   setMicrophoneVolume: (volume: number) => void;
   setDebugMode: (enabled: boolean) => void;
   toggleDebugMode: () => void;
+  setScenario: (scenario: ScenarioType) => void;
   addLog: (category: LogCategory, message: string) => void;
   clearMessages: () => void;
   clearLogs: () => void;
@@ -212,6 +219,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'SET_DEBUG_MODE', payload: !state.isDebugMode });
   }, [state.isDebugMode]);
 
+  const setScenario = useCallback((scenario: ScenarioType) => {
+    dispatch({ type: 'SET_SCENARIO', payload: scenario });
+  }, []);
+
   const addLog = useCallback((category: LogCategory, message: string) => {
     const log: LogEntry = {
       id: crypto.randomUUID(),
@@ -248,6 +259,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     setMicrophoneVolume,
     setDebugMode,
     toggleDebugMode,
+    setScenario,
     addLog,
     clearMessages,
     clearLogs,
