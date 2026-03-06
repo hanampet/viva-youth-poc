@@ -4,7 +4,7 @@ import { Header } from './components/layout/Header';
 import { ClientView } from './components/layout/ClientView';
 import { OperatorView } from './components/layout/OperatorView';
 import { useGeminiLive } from './hooks/useGeminiLive';
-import { RESUME_PROMPT } from './constants/systemPrompts';
+import { RESUME_PROMPT, SCENARIOS, type ScenarioType } from './constants/systemPrompts';
 
 function AppContent() {
   const {
@@ -18,6 +18,8 @@ function AppContent() {
     clearMessages,
     addLog,
     messages,
+    scenario,
+    setScenario,
   } = useSession();
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -91,7 +93,7 @@ function AppContent() {
         ref={menuRef}
         className={`fixed z-50 flex items-center gap-2 ${
           isDebugMode
-            ? 'bottom-4 left-[calc(50%-5rem)]'
+            ? 'bottom-4 left-[calc(50%-5rem-50px)]'
             : 'bottom-4 right-4'
         }`}
       >
@@ -175,6 +177,34 @@ function AppContent() {
           {/* 메뉴 팝업 */}
           {isMenuOpen && (
             <div className="absolute bottom-12 right-0 bg-white rounded-lg shadow-lg border border-surface-200 py-2 min-w-36">
+              {/* 시나리오 선택 */}
+              <div className="px-4 py-1 text-xs text-surface-400 font-medium">시나리오</div>
+              {(Object.keys(SCENARIOS) as ScenarioType[]).map((key) => (
+                <button
+                  key={key}
+                  onClick={() => { setScenario(key); setIsMenuOpen(false); }}
+                  disabled={isSessionActive}
+                  className={`w-full px-4 py-2 text-left text-sm flex items-center gap-2 ${
+                    isSessionActive
+                      ? 'text-surface-300 cursor-not-allowed'
+                      : scenario === key
+                        ? 'bg-primary-50 text-primary-700'
+                        : 'hover:bg-surface-100'
+                  }`}
+                >
+                  {scenario === key && (
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  )}
+                  {scenario !== key && <span className="w-4" />}
+                  {SCENARIOS[key].name}
+                </button>
+              ))}
+
+              <div className="my-1 border-t border-surface-200" />
+
+              {/* 디버그 토글 */}
               <button
                 onClick={() => { toggleDebugMode(); setIsMenuOpen(false); }}
                 className="w-full px-4 py-2 text-left text-sm hover:bg-surface-100 flex items-center gap-2"

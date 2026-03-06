@@ -5,7 +5,7 @@ import { AudioPlayback } from '../lib/audio/playback';
 import { useSession, type VADSensitivityLevel } from '../contexts/SessionContext';
 import { useSessionAnalyzer } from './useSessionAnalyzer';
 import { waitForMonitorCleanup } from './useMicrophoneMonitor';
-import { SYSTEM_PROMPT } from '../constants/systemPrompts';
+import { SCENARIOS } from '../constants/systemPrompts';
 import type { VADConfig } from '../lib/gemini/types';
 
 function getVADConfig(level: VADSensitivityLevel): VADConfig {
@@ -48,6 +48,7 @@ export function useGeminiLive() {
     connectionStatus,
     vadSensitivity,
     selectedMicrophoneId,
+    scenario,
   } = useSession();
 
   const { analyze } = useSessionAnalyzer();
@@ -83,6 +84,7 @@ export function useGeminiLive() {
     const vadConfig = getVADConfig(vadSensitivity);
     const silenceStr = vadConfig.silenceDurationMs ? `${vadConfig.silenceDurationMs}ms` : 'default';
     addLog('SYSTEM', `VAD: ${vadSensitivity} (silence: ${silenceStr})`);
+    addLog('SYSTEM', `Scenario: ${SCENARIOS[scenario].name}`);
 
     // 연결 시작 전 스트리밍 상태 리셋
     streamingMessageIdRef.current = null;
@@ -106,7 +108,7 @@ export function useGeminiLive() {
       // Initialize Gemini client
       clientRef.current = new GeminiLiveClient({
         apiKey,
-        systemPrompt: SYSTEM_PROMPT,
+        systemPrompt: SCENARIOS[scenario].prompt,
         vadConfig,
         onAudioData: (audioData) => {
           // 인터럽트 상태면 오디오 무시
@@ -277,6 +279,7 @@ export function useGeminiLive() {
     addLog,
     vadSensitivity,
     selectedMicrophoneId,
+    scenario,
   ]);
 
   const disconnect = useCallback(() => {
