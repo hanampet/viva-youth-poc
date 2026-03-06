@@ -79,15 +79,6 @@ export function StateFlowIndicator() {
           })}
         </div>
       </div>
-
-      {/* Current stage description */}
-      <div className="mt-4 p-3 rounded-lg bg-primary-50 border border-primary-100">
-        <p className="text-sm text-primary-700">
-          <span className="font-semibold">{currentInfo.label}</span>
-          <span className="mx-2 text-primary-300">|</span>
-          {currentInfo.description}
-        </p>
-      </div>
     </div>
   );
 }
