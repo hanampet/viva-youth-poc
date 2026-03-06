@@ -114,9 +114,7 @@ export class GeminiLiveClient {
         // Enable audio transcript output (AI 음성의 텍스트)
         outputAudioTranscription: {},
         // Enable input audio transcription (사용자 음성의 텍스트)
-        inputAudioTranscription: {
-          languageCode: 'ko-KR',
-        },
+        inputAudioTranscription: {},
         ...(this.options.systemPrompt && {
           systemInstruction: {
             parts: [{ text: this.options.systemPrompt }],
