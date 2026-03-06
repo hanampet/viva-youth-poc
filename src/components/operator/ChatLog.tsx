@@ -20,7 +20,7 @@ export function ChatLog() {
   };
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 border-b border-surface-200">
+    <div className="flex-1 flex flex-col min-h-48 border-b border-surface-200">
       <div className="px-4 py-2 border-b border-surface-200 flex items-center justify-between bg-surface-50">
         <h3 className="text-sm font-medium text-surface-700">대화 로그</h3>
         <span className="text-xs text-surface-500">{messages.length} messages</span>
