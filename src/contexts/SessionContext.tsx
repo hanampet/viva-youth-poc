@@ -19,6 +19,7 @@ interface SessionContextState extends SessionState {
   selectedMicrophoneId: string;
   availableMicrophones: AudioDevice[];
   microphoneVolume: number;  // 마이크 입력 전용 볼륨
+  isDebugMode: boolean;  // 디버그 모드 (운영자 패널 표시)
 }
 
 type SessionAction =
@@ -36,6 +37,7 @@ type SessionAction =
   | { type: 'SET_SELECTED_MICROPHONE'; payload: string }
   | { type: 'SET_AVAILABLE_MICROPHONES'; payload: AudioDevice[] }
   | { type: 'SET_MICROPHONE_VOLUME'; payload: number }
+  | { type: 'SET_DEBUG_MODE'; payload: boolean }
   | { type: 'ADD_LOG'; payload: LogEntry }
   | { type: 'CLEAR_MESSAGES' }
   | { type: 'CLEAR_LOGS' };
@@ -55,6 +57,7 @@ const initialState: SessionContextState = {
   selectedMicrophoneId: '',  // 빈 문자열 = 시스템 기본값
   availableMicrophones: [],
   microphoneVolume: 0,
+  isDebugMode: false,  // 기본값: 사용자 화면만 표시
 };
 
 function sessionReducer(state: SessionContextState, action: SessionAction): SessionContextState {
@@ -93,6 +96,8 @@ function sessionReducer(state: SessionContextState, action: SessionAction): Sess
       return { ...state, availableMicrophones: action.payload };
     case 'SET_MICROPHONE_VOLUME':
       return { ...state, microphoneVolume: action.payload };
+    case 'SET_DEBUG_MODE':
+      return { ...state, isDebugMode: action.payload };
     case 'ADD_LOG':
       return { ...state, logs: [...state.logs.slice(-100), action.payload] };
     case 'CLEAR_MESSAGES':
@@ -119,6 +124,8 @@ interface SessionContextValue extends SessionContextState {
   setSelectedMicrophone: (deviceId: string) => void;
   setAvailableMicrophones: (devices: AudioDevice[]) => void;
   setMicrophoneVolume: (volume: number) => void;
+  setDebugMode: (enabled: boolean) => void;
+  toggleDebugMode: () => void;
   addLog: (category: LogCategory, message: string) => void;
   clearMessages: () => void;
   clearLogs: () => void;
@@ -197,6 +204,14 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'SET_MICROPHONE_VOLUME', payload: volume });
   }, []);
 
+  const setDebugMode = useCallback((enabled: boolean) => {
+    dispatch({ type: 'SET_DEBUG_MODE', payload: enabled });
+  }, []);
+
+  const toggleDebugMode = useCallback(() => {
+    dispatch({ type: 'SET_DEBUG_MODE', payload: !state.isDebugMode });
+  }, [state.isDebugMode]);
+
   const addLog = useCallback((category: LogCategory, message: string) => {
     const log: LogEntry = {
       id: crypto.randomUUID(),
@@ -231,6 +246,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     setSelectedMicrophone,
     setAvailableMicrophones,
     setMicrophoneVolume,
+    setDebugMode,
+    toggleDebugMode,
     addLog,
     clearMessages,
     clearLogs,

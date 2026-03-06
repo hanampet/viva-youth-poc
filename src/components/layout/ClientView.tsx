@@ -1,14 +1,16 @@
 import { useState } from 'react';
 import { HealingObject } from '../client/HealingObject';
 import { HealingObjectV2 } from '../client/HealingObjectV2';
+import { useSession } from '../../contexts/SessionContext';
 
 type ViewStyle = 'orb' | 'aurora';
 
 export function ClientView() {
+  const { isDebugMode } = useSession();
   const [viewStyle, setViewStyle] = useState<ViewStyle>('orb');
 
   return (
-    <div className="w-1/2 flex flex-col relative overflow-hidden">
+    <div className={`${isDebugMode ? 'w-1/2' : 'w-full'} flex flex-col relative overflow-hidden`}>
       {viewStyle === 'orb' ? (
         // Style 1: Orb (원형 오브제)
         <div className="flex-1 flex items-center justify-center bg-gradient-to-b from-surface-50 via-white to-surface-50 relative">
@@ -27,37 +29,37 @@ export function ClientView() {
         <HealingObjectV2 />
       )}
 
-      {/* Style toggle - bottom left */}
-      <div className="absolute bottom-4 left-4 flex items-center gap-3 z-20">
-        <span className="text-xs text-gray-400">스타일:</span>
-        <div className="flex gap-1 bg-black/30 backdrop-blur-sm rounded-lg p-1">
-          <button
-            onClick={() => setViewStyle('orb')}
-            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
-              viewStyle === 'orb'
-                ? 'bg-white text-gray-900 shadow'
-                : 'text-gray-400 hover:text-gray-200'
-            }`}
-          >
-            Orb
-          </button>
-          <button
-            onClick={() => setViewStyle('aurora')}
-            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
-              viewStyle === 'aurora'
-                ? 'bg-white text-gray-900 shadow'
-                : 'text-gray-400 hover:text-gray-200'
-            }`}
-          >
-            Aurora
-          </button>
+      {/* Style toggle - bottom left (디버그 모드에서만 표시) */}
+      {isDebugMode && (
+        <div className="absolute bottom-4 left-4 flex items-center gap-3 z-20">
+          <span className="text-xs text-gray-400">스타일:</span>
+          <div className="flex gap-1 bg-black/30 backdrop-blur-sm rounded-lg p-1">
+            <button
+              onClick={() => setViewStyle('orb')}
+              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                viewStyle === 'orb'
+                  ? 'bg-white text-gray-900 shadow'
+                  : 'text-gray-400 hover:text-gray-200'
+              }`}
+            >
+              Orb
+            </button>
+            <button
+              onClick={() => setViewStyle('aurora')}
+              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                viewStyle === 'aurora'
+                  ? 'bg-white text-gray-900 shadow'
+                  : 'text-gray-400 hover:text-gray-200'
+              }`}
+            >
+              Aurora
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* User view label */}
-      <div className="absolute bottom-4 right-4 text-gray-500 text-sm z-20">
-        사용자 화면
-      </div>
+      {/* User view label (디버그 모드에서만 표시) */}
+      {isDebugMode}
     </div>
   );
 }

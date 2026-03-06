@@ -30,9 +30,7 @@ export interface GeminiSetupMessage {
       };
     };
     outputAudioTranscription?: Record<string, never>;
-    inputAudioTranscription?: {
-      languageCode?: string;
-    };
+    inputAudioTranscription?: Record<string, never>;
     systemInstruction?: {
       parts: Array<{ text: string }>;
     };

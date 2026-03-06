@@ -164,22 +164,17 @@ function CloudOrb({ orbState, currentVolume, isSessionActive }: OrbProps) {
         />
       </div>
 
-      {/* Speaking pulse rings */}
+      {/* Speaking pulse ring */}
       {orbState === 'speaking' && currentVolume > 0.1 && (
-        <>
-          {[...Array(3)].map((_, i) => (
-            <motion.div
-              key={`pulse-${i}`}
-              className="absolute inset-0 rounded-full"
-              style={{
-                border: '1.5px solid rgba(59,130,246,0.5)',
-              }}
-              initial={{ scale: 1, opacity: 0.6 }}
-              animate={{ scale: 1.4 + i * 0.15, opacity: 0 }}
-              transition={{ duration: 0.8, delay: i * 0.15, repeat: Infinity }}
-            />
-          ))}
-        </>
+        <motion.div
+          className="absolute inset-0 rounded-full"
+          style={{
+            border: '1.5px solid rgba(59,130,246,0.5)',
+          }}
+          initial={{ scale: 1, opacity: 0.6 }}
+          animate={{ scale: 1.5, opacity: 0 }}
+          transition={{ duration: 0.8, repeat: Infinity }}
+        />
       )}
     </motion.div>
   );
@@ -198,27 +193,23 @@ export function HealingObject() {
     <div className="relative flex flex-col items-center">
       {/* Orb container */}
       <div className="relative w-64 h-64 flex items-center justify-center">
-        {/* Outer glow rings */}
-        {[...Array(3)].map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute rounded-full border border-primary-300/20"
-            style={{
-              width: `${280 + i * 40}px`,
-              height: `${280 + i * 40}px`,
-            }}
-            animate={{
-              scale: orbState === 'speaking' ? [1, 1.03, 1] : 1,
-              opacity: isSessionActive ? [0.3, 0.5, 0.3] : 0.2,
-            }}
-            transition={{
-              duration: 2 + i * 0.5,
-              repeat: Infinity,
-              ease: 'easeInOut',
-              delay: i * 0.3,
-            }}
-          />
-        ))}
+        {/* Outer glow ring */}
+        <motion.div
+          className="absolute rounded-full border border-primary-300/20"
+          style={{
+            width: '300px',
+            height: '300px',
+          }}
+          animate={{
+            scale: orbState === 'speaking' ? [1, 1.03, 1] : 1,
+            opacity: isSessionActive ? [0.3, 0.5, 0.3] : 0.2,
+          }}
+          transition={{
+            duration: 2,
+            repeat: Infinity,
+            ease: 'easeInOut',
+          }}
+        />
 
         <CloudOrb orbState={orbState} currentVolume={currentVolume} isSessionActive={isSessionActive} />
 
