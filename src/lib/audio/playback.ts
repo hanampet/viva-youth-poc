@@ -13,7 +13,7 @@ export class AudioPlayback {
   private scheduledEndTime = 0;
   private volumeCheckInterval: number | null = null;
   private pendingBuffers: Float32Array[] = [];
-  private bufferThreshold = 3; // Start playing after this many chunks
+  private bufferThreshold = 9; // Start playing after this many chunks
   private hasStartedPlaying = false;
   private activeSources: AudioBufferSourceNode[] = [];
 
