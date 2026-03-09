@@ -95,7 +95,7 @@ function AppContent() {
         ref={menuRef}
         className={`fixed z-50 flex items-center gap-2 ${
           isDebugMode
-            ? 'bottom-4 left-[calc(50%-5rem-50px)]'
+            ? 'bottom-4 right-[calc(50%+1rem)]'
             : 'bottom-4 right-4'
         }`}
       >
@@ -105,11 +105,7 @@ function AppContent() {
           {!isSessionActive && (
             <button
               onClick={handleToggleSession}
-              className={`p-2 rounded-lg transition-all ${
-                isDebugMode
-                  ? 'bg-surface-200 hover:bg-surface-300 text-surface-600'
-                  : 'bg-black/20 hover:bg-black/40 text-white/40 hover:text-white/70'
-              }`}
+              className="p-2 rounded-lg transition-all bg-black/20 hover:bg-black/40 text-white/40 hover:text-white/70"
               title="세션 시작"
             >
               {/* Play icon */}
@@ -184,7 +180,13 @@ function AppContent() {
               {(Object.keys(SCENARIOS) as ScenarioType[]).map((key) => (
                 <button
                   key={key}
-                  onClick={() => { setScenario(key); setIsMenuOpen(false); }}
+                  onClick={() => {
+                    if (key !== scenario) {
+                      setScenario(key);
+                      addLog('SYSTEM', `시나리오 변경: ${SCENARIOS[key].name}`);
+                    }
+                    setIsMenuOpen(false);
+                  }}
                   disabled={isSessionActive}
                   className={`w-full px-4 py-2 text-left text-sm flex items-center gap-2 ${
                     isSessionActive
@@ -223,11 +225,7 @@ function AppContent() {
           {/* 햄버거 버튼 */}
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className={`p-2 rounded-lg transition-all duration-300 ${
-              isDebugMode
-                ? 'bg-surface-200 hover:bg-surface-300 text-surface-600'
-                : 'bg-black/20 hover:bg-black/40 text-white/40 hover:text-white/70'
-            }`}
+            className="p-2 rounded-lg transition-all duration-300 bg-black/20 hover:bg-black/40 text-white/40 hover:text-white/70"
             title="메뉴"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

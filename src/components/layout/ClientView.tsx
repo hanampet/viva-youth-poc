@@ -6,7 +6,7 @@ import { useSession } from '../../contexts/SessionContext';
 type ViewStyle = 'orb' | 'aurora';
 
 export function ClientView() {
-  const { isDebugMode } = useSession();
+  const { isDebugMode, addLog } = useSession();
   const [viewStyle, setViewStyle] = useState<ViewStyle>('orb');
 
   return (
@@ -35,7 +35,7 @@ export function ClientView() {
           <span className="text-xs text-gray-400">스타일:</span>
           <div className="flex gap-1 bg-black/30 backdrop-blur-sm rounded-lg p-1">
             <button
-              onClick={() => setViewStyle('orb')}
+              onClick={() => { setViewStyle('orb'); addLog('SYSTEM', '스타일 변경: Orb'); }}
               className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
                 viewStyle === 'orb'
                   ? 'bg-white text-gray-900 shadow'
@@ -45,7 +45,7 @@ export function ClientView() {
               Orb
             </button>
             <button
-              onClick={() => setViewStyle('aurora')}
+              onClick={() => { setViewStyle('aurora'); addLog('SYSTEM', '스타일 변경: Aurora'); }}
               className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
                 viewStyle === 'aurora'
                   ? 'bg-white text-gray-900 shadow'
