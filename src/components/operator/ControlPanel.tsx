@@ -126,8 +126,8 @@ export function ControlPanel() {
       <h3 className="text-sm font-medium text-surface-700 mb-3">운영자 제어</h3>
 
       <div className="space-y-3">
-        {/* Session control - Two buttons side by side */}
-        <div className="flex gap-2">
+        {/* Session control - 하단 컨트롤 바로 대체되어 비활성화 */}
+        {/* <div className="flex gap-2">
           <button
             onClick={handleToggleSession}
             className={`flex-1 px-4 py-2.5 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 ${
@@ -180,7 +180,7 @@ export function ControlPanel() {
               </>
             )}
           </button>
-        </div>
+        </div> */}
 
         {/* Audio Settings & Connection status - Single row */}
         <div className="flex items-center gap-3 p-3 rounded-lg bg-white border border-surface-200">

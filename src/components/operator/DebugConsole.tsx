@@ -34,7 +34,7 @@ export function DebugConsole() {
   };
 
   return (
-    <div className="h-24 flex flex-col bg-surface-900">
+    <div className="h-48 flex flex-col bg-surface-900">
       <div className="px-4 py-2 border-b border-surface-800 flex items-center justify-between">
         <h3 className="text-sm font-medium text-surface-300">디버그 콘솔</h3>
         <button
