@@ -101,9 +101,11 @@ export function useGeminiLive() {
       playbackRef.current = new AudioPlayback({
         onPlaybackStart: () => {
           setOrbState('speaking');
+          addLog('GEMINI', 'AI speaking started');
         },
         onPlaybackEnd: () => {
           setOrbState('listening');
+          addLog('GEMINI', 'AI speaking ended');
         },
         onVolumeChange: (volume) => {
           setVolume(volume);
