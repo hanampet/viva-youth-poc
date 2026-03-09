@@ -157,9 +157,10 @@ export function useGeminiLive() {
           userSpeechStartTimeRef.current = null;
           setInterimTranscript('');
 
-          const thinking = thinkingRef.current;
-          thinkingRef.current = '';
-          analyzeRef.current(thinking);
+          // Session analyzer 비활성화 (thinkingBudget=0 사용 중)
+          // const thinking = thinkingRef.current;
+          // thinkingRef.current = '';
+          // analyzeRef.current(thinking);
         },
         onTurnComplete: () => {
           console.log('[useGeminiLive] Turn complete, resetting interrupt flag');
@@ -185,7 +186,7 @@ export function useGeminiLive() {
           if (!options?.restoreContext) {
             setTimeout(() => {
               if (clientRef.current?.connected) {
-                clientRef.current.sendText('[세션 시작] 내담자가 XR 힐링룸에 입장하여 편안한 의자에 착석했습니다. 1단계(맞이)를 시작해주세요.');
+                clientRef.current.sendText(SCENARIOS[scenario].startMessage);
               }
             }, 100);
           }
