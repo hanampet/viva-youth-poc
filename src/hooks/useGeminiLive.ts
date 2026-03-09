@@ -66,6 +66,12 @@ export function useGeminiLive() {
   const pendingUserTranscriptRef = useRef<string>('');  // 아직 확정되지 않은 사용자 텍스트
 
   const connect = useCallback(async (options?: ConnectOptions) => {
+    // 이미 연결 중이거나 연결된 상태면 무시
+    if (clientRef.current) {
+      console.log('[useGeminiLive] Already connected or connecting, ignoring connect call');
+      return;
+    }
+
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
     if (!apiKey) {
@@ -283,6 +289,7 @@ export function useGeminiLive() {
   ]);
 
   const disconnect = useCallback(() => {
+    console.log('[useGeminiLive] disconnect called');
     captureRef.current?.stop();
     captureRef.current = null;
 
@@ -292,11 +299,19 @@ export function useGeminiLive() {
     clientRef.current?.disconnect();
     clientRef.current = null;
 
+    // 모든 상태 리셋
     streamingMessageIdRef.current = null;
+    thinkingRef.current = '';
+    isInterruptedRef.current = false;
+    userSpeechStartTimeRef.current = null;
+    aiResponseStartTimeRef.current = null;
+    pendingUserTranscriptRef.current = '';
+
     setInterimTranscript('');
     setConnectionStatus('disconnected');
     setOrbState('idle');
     setVolume(0);
+    console.log('[useGeminiLive] disconnect complete');
   }, [setConnectionStatus, setOrbState, setVolume, setInterimTranscript]);
 
   const sendText = useCallback((text: string) => {

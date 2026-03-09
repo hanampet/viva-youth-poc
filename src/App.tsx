@@ -38,6 +38,7 @@ function AppContent() {
   }, []);
 
   const handleToggleSession = async () => {
+    console.log('[App] handleToggleSession called, isSessionActive:', isSessionActive);
     if (!isSessionActive) {
       clearMessages();
       setSessionActive(true);
@@ -45,6 +46,7 @@ function AppContent() {
       addLog('SYSTEM', 'Session started');
       await connect();
     } else {
+      console.log('[App] Stopping session...');
       disconnect();
       setSessionActive(false);
       setStage('IDLE');
