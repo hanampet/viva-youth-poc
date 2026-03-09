@@ -77,7 +77,6 @@ export async function analyzeSession(
 
   // IDLE 또는 OUTRO 단계에서는 분석하지 않음 (운영자가 제어)
   if (currentStage === 'IDLE' || currentStage === 'OUTRO') {
-    console.log('[TextLLM] Skipping analysis for operator-controlled stage:', currentStage);
     return null;
   }
 
@@ -137,18 +136,15 @@ currentStage는 현재 단계(${currentStage}) 또는 다음 단계(${nextStageI
       const stageDiff = resultStageInfo.order - currentInfo.order;
       if (stageDiff > 1) {
         // 2단계 이상 점프 시 다음 단계로 제한
-        console.log('[TextLLM] Stage jump detected, limiting to next stage');
         result.currentStage = nextStageInfo?.id || currentStage;
       } else if (stageDiff < 0) {
         // 뒤로 가는 것 방지
-        console.log('[TextLLM] Stage regression detected, keeping current stage');
         result.currentStage = currentStage;
       }
     }
 
     // HEALING_PREP 이후로 넘어가지 않도록 (OUTRO는 운영자가 제어)
     if (result.currentStage === 'OUTRO') {
-      console.log('[TextLLM] OUTRO stage detected, keeping HEALING_PREP');
       result.currentStage = 'HEALING_PREP';
     }
 

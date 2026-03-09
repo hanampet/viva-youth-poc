@@ -64,11 +64,11 @@ export function useGeminiLive() {
   const userSpeechStartTimeRef = useRef<Date | null>(null);  // 사용자 발화 시작 시점
   const aiResponseStartTimeRef = useRef<Date | null>(null);  // AI 응답 시작 시점
   const pendingUserTranscriptRef = useRef<string>('');  // 아직 확정되지 않은 사용자 텍스트
+  const aiResponseTextRef = useRef<string>('');  // AI 응답 텍스트 누적 (로그용)
 
   const connect = useCallback(async (options?: ConnectOptions) => {
     // 이미 연결 중이거나 연결된 상태면 무시
     if (clientRef.current) {
-      console.log('[useGeminiLive] Already connected or connecting, ignoring connect call');
       return;
     }
 
@@ -119,13 +119,14 @@ export function useGeminiLive() {
         onAudioData: (audioData) => {
           // 인터럽트 상태면 오디오 무시
           if (isInterruptedRef.current) {
-            console.log('[useGeminiLive] Audio ignored (interrupted)');
             return;
           }
-          console.log('[useGeminiLive] Playing audio chunk, length:', audioData.length);
           playbackRef.current?.playBase64Audio(audioData);
         },
         onTextContent: (text) => {
+          // AI 응답 텍스트 누적 (로그용)
+          aiResponseTextRef.current += text;
+
           if (!streamingMessageIdRef.current) {
             // 새 스트리밍 시작 - 메시지 생성하고 ID 저장 (AI 응답 시작 시점 타임스탬프 사용)
             const responseStartTime = aiResponseStartTimeRef.current || new Date();
@@ -144,7 +145,6 @@ export function useGeminiLive() {
           aiResponseStartTimeRef.current = new Date();
 
           // 새로운 AI 응답이므로 인터럽트 플래그 리셋 (새 오디오 재생 허용)
-          console.log('[useGeminiLive] AI responding, resetting interrupt flag');
           isInterruptedRef.current = false;
 
           // 사용자 발화 텍스트 확정 (AI가 응답을 시작했으므로 사용자 발화 완료)
@@ -163,7 +163,12 @@ export function useGeminiLive() {
           // analyzeRef.current(thinking);
         },
         onTurnComplete: () => {
-          console.log('[useGeminiLive] Turn complete, resetting interrupt flag');
+          // AI 응답 완료 로그 (완성된 문장)
+          if (aiResponseTextRef.current.trim()) {
+            addLog('GEMINI', `AI: ${aiResponseTextRef.current.trim()}`);
+          }
+          aiResponseTextRef.current = '';  // 리셋
+
           streamingMessageIdRef.current = null;
           aiResponseStartTimeRef.current = null;  // AI 응답 시작 시점 리셋
           isInterruptedRef.current = false;  // 인터럽트 상태 리셋
@@ -205,8 +210,6 @@ export function useGeminiLive() {
         },
         onInputTranscription: (text) => {
           // Gemini가 인식한 사용자 음성 텍스트 (청크 단위로 옴 - 누적 필요)
-          console.log('[useGeminiLive] inputTranscription:', text, 'playing:', playbackRef.current?.playing);
-
           // 텍스트 누적 (청크 단위로 오므로 이어붙이기)
           pendingUserTranscriptRef.current += text;
           setInterimTranscript(pendingUserTranscriptRef.current);
@@ -218,7 +221,6 @@ export function useGeminiLive() {
 
           // 사용자가 말하기 시작하면 AI 오디오 정지 (하지만 다음 응답은 재생되어야 함)
           if (playbackRef.current?.playing) {
-            console.log('[useGeminiLive] User speaking, stopping current playback');
             playbackRef.current.stop();
             // 주의: isInterruptedRef는 현재 턴의 남은 오디오만 무시하기 위함
             // onThinkingComplete에서 리셋됨
@@ -290,7 +292,6 @@ export function useGeminiLive() {
   ]);
 
   const disconnect = useCallback(() => {
-    console.log('[useGeminiLive] disconnect called');
     captureRef.current?.stop();
     captureRef.current = null;
 
@@ -307,12 +308,12 @@ export function useGeminiLive() {
     userSpeechStartTimeRef.current = null;
     aiResponseStartTimeRef.current = null;
     pendingUserTranscriptRef.current = '';
+    aiResponseTextRef.current = '';
 
     setInterimTranscript('');
     setConnectionStatus('disconnected');
     setOrbState('idle');
     setVolume(0);
-    console.log('[useGeminiLive] disconnect complete');
   }, [setConnectionStatus, setOrbState, setVolume, setInterimTranscript]);
 
   const sendText = useCallback((text: string) => {
