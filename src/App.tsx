@@ -38,7 +38,6 @@ function AppContent() {
   }, []);
 
   const handleToggleSession = async () => {
-    console.log('[App] handleToggleSession called, isSessionActive:', isSessionActive);
     if (!isSessionActive) {
       clearMessages();
       setSessionActive(true);
@@ -46,7 +45,6 @@ function AppContent() {
       addLog('SYSTEM', 'Session started');
       await connect();
     } else {
-      console.log('[App] Stopping session...');
       disconnect();
       setSessionActive(false);
       setStage('IDLE');
@@ -118,37 +116,39 @@ function AppContent() {
           {/* 세션 진행 중 */}
           {isSessionActive && (
             <>
-              {/* 일시정지 중이면 재생(재개) 버튼, 아니면 일시정지 버튼 */}
-              {isVideoPlaying ? (
-                <button
-                  onClick={handleTogglePause}
-                  className={`p-2 rounded-lg transition-all ${
-                    isDebugMode
-                      ? 'bg-surface-200 hover:bg-surface-300 text-surface-600'
-                      : 'bg-black/20 hover:bg-black/40 text-white/40 hover:text-white/70'
-                  }`}
-                  title="재개"
-                >
-                  {/* Play icon */}
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M8 5v14l11-7z" />
-                  </svg>
-                </button>
-              ) : (
-                <button
-                  onClick={handleTogglePause}
-                  className={`p-2 rounded-lg transition-all ${
-                    isDebugMode
-                      ? 'bg-surface-200 hover:bg-surface-300 text-surface-600'
-                      : 'bg-black/20 hover:bg-black/40 text-white/40 hover:text-white/70'
-                  }`}
-                  title="일시정지"
-                >
-                  {/* Pause icon */}
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
-                  </svg>
-                </button>
+              {/* 일시정지/재개 버튼 (힐링룸만) */}
+              {scenario === 'healing' && (
+                isVideoPlaying ? (
+                  <button
+                    onClick={handleTogglePause}
+                    className={`p-2 rounded-lg transition-all ${
+                      isDebugMode
+                        ? 'bg-surface-200 hover:bg-surface-300 text-surface-600'
+                        : 'bg-black/20 hover:bg-black/40 text-white/40 hover:text-white/70'
+                    }`}
+                    title="재개"
+                  >
+                    {/* Play icon */}
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M8 5v14l11-7z" />
+                    </svg>
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleTogglePause}
+                    className={`p-2 rounded-lg transition-all ${
+                      isDebugMode
+                        ? 'bg-surface-200 hover:bg-surface-300 text-surface-600'
+                        : 'bg-black/20 hover:bg-black/40 text-white/40 hover:text-white/70'
+                    }`}
+                    title="일시정지"
+                  >
+                    {/* Pause icon */}
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
+                    </svg>
+                  </button>
+                )
               )}
 
               {/* 중지 버튼 */}

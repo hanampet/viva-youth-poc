@@ -189,7 +189,12 @@ export function ControlPanel() {
             <span className="text-xs text-surface-500">음성 감도:</span>
             <select
               value={vadSensitivity}
-              onChange={(e) => setVadSensitivity(e.target.value as VADSensitivityLevel)}
+              onChange={(e) => {
+                const newValue = e.target.value as VADSensitivityLevel;
+                setVadSensitivity(newValue);
+                const label = VAD_OPTIONS.find(o => o.value === newValue)?.label || newValue;
+                addLog('AUDIO', `VAD 감도 변경: ${label}`);
+              }}
               disabled={isSessionActive}
               className={`text-xs px-2 py-1 rounded border ${
                 isSessionActive
@@ -210,7 +215,14 @@ export function ControlPanel() {
             <span className="text-xs text-surface-500 shrink-0">마이크:</span>
             <select
               value={selectedMicrophoneId}
-              onChange={(e) => setSelectedMicrophone(e.target.value)}
+              onChange={(e) => {
+                const newDeviceId = e.target.value;
+                setSelectedMicrophone(newDeviceId);
+                const label = newDeviceId
+                  ? availableMicrophones.find(d => d.deviceId === newDeviceId)?.label || newDeviceId.slice(0, 8)
+                  : '시스템 기본값';
+                addLog('AUDIO', `마이크 변경: ${label}`);
+              }}
               disabled={isSessionActive}
               className={`text-xs px-2 py-1 rounded border w-32 truncate ${
                 isSessionActive

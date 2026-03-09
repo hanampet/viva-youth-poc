@@ -34,14 +34,12 @@ export class GeminiLiveClient {
     return new Promise((resolve, reject) => {
       const url = `${GEMINI_WS_URL}?key=${this.options.apiKey}`;
 
-      console.log('[Gemini] Connecting to:', url.replace(this.options.apiKey, '***'));
       this.resolveConnect = resolve;
 
       try {
         this.ws = new WebSocket(url);
 
         this.ws.onopen = () => {
-          console.log('[Gemini] WebSocket connected, sending setup...');
           this.sendSetup();
         };
 
@@ -64,8 +62,7 @@ export class GeminiLiveClient {
           reject(error);
         };
 
-        this.ws.onclose = (event) => {
-          console.log('[Gemini] WebSocket closed:', event.code, event.reason);
+        this.ws.onclose = () => {
           this.isSetupComplete = false;
           this.options.onConnectionChange?.(false);
         };
@@ -126,7 +123,6 @@ export class GeminiLiveClient {
       },
     };
 
-    console.log('[Gemini] Setup message:', JSON.stringify(setupMessage, null, 2));
     this.send(setupMessage);
   }
 
@@ -134,19 +130,14 @@ export class GeminiLiveClient {
     try {
       const message = JSON.parse(data);
 
-      // 모든 서버 메시지 로그 (디버깅용)
-      console.log('[Gemini] Server message:', JSON.stringify(message).slice(0, 500));
-
       // Check for setup complete
       if ('setupComplete' in message) {
-        console.log('[Gemini] Setup complete!');
         this.isSetupComplete = true;
         this.options.onSetupComplete?.();
         this.options.onConnectionChange?.(true);
 
         // 컨텍스트 복원이 있으면 실행
         if (this.pendingRestore) {
-          console.log('[Gemini] Restoring context with', this.pendingRestore.messages.length, 'messages');
           this.restoreContext(this.pendingRestore);
           this.pendingRestore = null;
         }
@@ -175,7 +166,6 @@ export class GeminiLiveClient {
             if (part.inlineData?.mimeType?.startsWith('audio/')) {
               // 첫 오디오 청크 수신 시 thinking 완료 알림
               if (!this.hasReceivedAudioThisTurn) {
-                console.log('[Gemini] First audio chunk received, calling onThinkingComplete');
                 this.hasReceivedAudioThisTurn = true;
                 this.options.onThinkingComplete?.();
               }
@@ -183,7 +173,6 @@ export class GeminiLiveClient {
             }
             // Capture thinking text
             if (part.text) {
-              console.log('[Gemini] Thinking text received');
               this.options.onThinking?.(part.text);
             }
           }
@@ -195,9 +184,6 @@ export class GeminiLiveClient {
         }
 
         // Handle transcript of user's spoken audio (사용자 음성 텍스트)
-        if (inputTranscription) {
-          console.log('[Gemini] inputTranscription:', JSON.stringify(inputTranscription));
-        }
         if (inputTranscription?.text) {
           this.options.onInputTranscription?.(inputTranscription.text);
         }
@@ -212,18 +198,9 @@ export class GeminiLiveClient {
     }
   }
 
-  private audioSendCount = 0;
-
   sendAudio(base64Audio: string): void {
     if (!this.isSetupComplete || !this.ws) {
-      console.warn('[Gemini] Cannot send audio - setup:', this.isSetupComplete, 'ws:', !!this.ws);
       return;
-    }
-
-    this.audioSendCount++;
-    // 100개마다 로그 (너무 많은 로그 방지)
-    if (this.audioSendCount % 100 === 0) {
-      console.log('[Gemini] Audio chunks sent:', this.audioSendCount);
     }
 
     const message = {
@@ -241,7 +218,6 @@ export class GeminiLiveClient {
   sendText(text: string): void {
     if (!this.isSetupComplete || !this.ws) return;
 
-    console.log('[Gemini] Sending text:', text);
     const message = {
       clientContent: {
         turns: [
@@ -272,8 +248,6 @@ export class GeminiLiveClient {
       parts: [{ text: context.resumePrompt }],
     });
 
-    console.log('[Gemini] Restoring context:', turns.length, 'turns');
-
     const message = {
       clientContent: {
         turns,
@@ -287,13 +261,10 @@ export class GeminiLiveClient {
   private send(message: object): void {
     if (this.ws?.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(message));
-    } else {
-      console.warn('[Gemini] Cannot send, WebSocket not open. State:', this.ws?.readyState);
     }
   }
 
   disconnect(): void {
-    console.log('[Gemini] Disconnecting...');
     if (this.ws) {
       this.ws.close();
       this.ws = null;
