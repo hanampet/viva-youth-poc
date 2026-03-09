@@ -84,6 +84,9 @@ export class GeminiLiveClient {
         model: this.options.model || DEFAULT_MODEL,
         generationConfig: {
           responseModalities: ['AUDIO'],
+          thinkingConfig: {
+            thinkingBudget: 0,
+          },
           speechConfig: {
             voiceConfig: {
               prebuiltVoiceConfig: {
@@ -130,6 +133,9 @@ export class GeminiLiveClient {
   private handleMessage(data: string): void {
     try {
       const message = JSON.parse(data);
+
+      // 모든 서버 메시지 로그 (디버깅용)
+      console.log('[Gemini] Server message:', JSON.stringify(message).slice(0, 500));
 
       // Check for setup complete
       if ('setupComplete' in message) {

@@ -12,6 +12,9 @@ export interface GeminiSetupMessage {
     model: string;
     generationConfig: {
       responseModalities: string[];
+      thinkingConfig?: {
+        thinkingBudget: number;
+      };
       speechConfig?: {
         voiceConfig: {
           prebuiltVoiceConfig: {
