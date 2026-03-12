@@ -7,6 +7,7 @@ export function useSessionAnalyzer() {
   const {
     messages,
     stage,
+    scenario,
     conversationMode,
     setStage,
     setConversationMode,
@@ -16,20 +17,26 @@ export function useSessionAnalyzer() {
   const previousModeRef = useRef<string>(conversationMode);
   const isAnalyzingRef = useRef(false);
 
-  const analyze = useCallback(async (thinking?: string) => {
+  const analyze = useCallback(async (thinking?: string, aiResponse?: string) => {
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-    if (!apiKey || messages.length === 0 || isAnalyzingRef.current) {
+    if (!apiKey || isAnalyzingRef.current) {
+      console.log('[SessionAnalyzer] Skipped:', { hasApiKey: !!apiKey, isAnalyzing: isAnalyzingRef.current });
       return;
     }
 
     isAnalyzingRef.current = true;
+    console.log('[SessionAnalyzer] Analyzing...', { currentStage: stage, scenario, hasThinking: !!thinking, hasAiResponse: !!aiResponse });
 
     try {
       const result = await analyzeSession(apiKey, {
         messages: messages.map((m) => ({ role: m.role, content: m.content })),
         currentStage: stage,
+        scenario,
         thinking,
+        aiResponse,
       });
+
+      console.log('[SessionAnalyzer] Result:', result);
 
       if (!result) {
         isAnalyzingRef.current = false;
@@ -38,8 +45,8 @@ export function useSessionAnalyzer() {
 
       // 세션 단계 변경
       if (result.currentStage !== stage) {
-        const prevInfo = getStageInfo(stage);
-        const newInfo = getStageInfo(result.currentStage);
+        const prevInfo = getStageInfo(stage, scenario);
+        const newInfo = getStageInfo(result.currentStage, scenario);
         setStage(result.currentStage);
         addLog('STAGE', `${prevInfo.label} → ${newInfo.label}`);
       }
@@ -60,7 +67,7 @@ export function useSessionAnalyzer() {
     } finally {
       isAnalyzingRef.current = false;
     }
-  }, [messages, stage, setStage, setConversationMode, addLog]);
+  }, [messages, stage, scenario, setStage, setConversationMode, addLog]);
 
   return { analyze };
 }

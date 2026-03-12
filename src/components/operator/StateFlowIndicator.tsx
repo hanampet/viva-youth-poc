@@ -1,16 +1,17 @@
 import { useSession } from '../../contexts/SessionContext';
-import { SESSION_STAGES, getStageInfo } from '../../constants/sessionStages';
+import { getStagesForScenario, getStageInfo } from '../../constants/sessionStages';
 
 export function StateFlowIndicator() {
-  const { stage, setStage, isSessionActive } = useSession();
-  const currentInfo = getStageInfo(stage);
+  const { stage, setStage, isSessionActive, scenario } = useSession();
+  const stages = getStagesForScenario(scenario);
+  const currentInfo = getStageInfo(stage, scenario);
 
   return (
     <div className="p-4 border-b border-surface-200">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-medium text-surface-700">세션 진행</h3>
         <span className="text-xs text-surface-500">
-          {currentInfo.order + 1} / {SESSION_STAGES.length}
+          {currentInfo.order + 1} / {stages.length}
         </span>
       </div>
 
@@ -21,13 +22,13 @@ export function StateFlowIndicator() {
         <div
           className="absolute top-3 left-3 h-1 bg-primary-500 rounded-full transition-all duration-500"
           style={{
-            width: `calc(${(currentInfo.order / (SESSION_STAGES.length - 1)) * 100}% - 24px)`,
+            width: `calc(${(currentInfo.order / (stages.length - 1)) * 100}% - 24px)`,
           }}
         />
 
         {/* Stations */}
         <div className="relative flex justify-between">
-          {SESSION_STAGES.map((stageInfo) => {
+          {stages.map((stageInfo) => {
             const isActive = stageInfo.id === stage;
             const isPast = stageInfo.order < currentInfo.order;
             const isClickable = isSessionActive && stageInfo.order <= currentInfo.order + 1;

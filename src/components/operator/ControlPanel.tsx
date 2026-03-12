@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useSession, type VADSensitivityLevel, type AudioDevice } from '../../contexts/SessionContext';
 import { useGeminiLive } from '../../hooks/useGeminiLive';
 import { useMicrophoneMonitor } from '../../hooks/useMicrophoneMonitor';
-import { RESUME_PROMPT } from '../../constants/systemPrompts';
+// import { RESUME_PROMPT } from '../../constants/systemPrompts'; // 하단 컨트롤 바로 대체
 
 async function enumerateAudioInputDevices(): Promise<AudioDevice[]> {
   try {
@@ -31,14 +31,14 @@ const VAD_OPTIONS: { value: VADSensitivityLevel; label: string }[] = [
 export function ControlPanel() {
   const {
     isSessionActive,
-    setSessionActive,
-    isVideoPlaying,
-    setVideoPlaying,
+    // setSessionActive, // 하단 컨트롤 바로 대체
+    // isVideoPlaying,
+    // setVideoPlaying,
     connectionStatus,
-    setStage,
-    clearMessages,
+    // setStage,
+    // clearMessages,
     addLog,
-    messages,
+    // messages,
     vadSensitivity,
     setVadSensitivity,
     selectedMicrophoneId,
@@ -75,8 +75,11 @@ export function ControlPanel() {
     };
   }, [setAvailableMicrophones]);
 
-  const { connect, disconnect } = useGeminiLive();
+  // 하단 컨트롤 바로 대체되어 여기서는 사용하지 않음
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { connect: _connect, disconnect: _disconnect } = useGeminiLive();
 
+  /* 세션 제어 함수 - 현재 비활성화 (하단 컨트롤 바에서 처리)
   const handleToggleSession = async () => {
     if (!isSessionActive) {
       clearMessages();
@@ -95,7 +98,7 @@ export function ControlPanel() {
 
   const handleTogglePause = async () => {
     if (!isVideoPlaying) {
-      // 일시정지: Gemini 연결 해제, 외부 영상 시청
+      // 일시정지: Gemini 연결 해제, 영상 재생 상태로 전환
       disconnect();
       setVideoPlaying(true);
       addLog('SYSTEM', 'Paused - Video playback');
@@ -103,7 +106,7 @@ export function ControlPanel() {
       // 재개: OUTRO 단계로 이동 후 컨텍스트 복원하며 재연결
       setVideoPlaying(false);
       setStage('OUTRO');
-      addLog('STAGE', '쉼 안내 → 마무리');
+      addLog('STAGE', '영상 추천 → 마무리');
       addLog('SYSTEM', 'Resumed - Reconnecting with context...');
 
       // 최근 10개 메시지만 전송 (토큰 제한)
@@ -120,6 +123,7 @@ export function ControlPanel() {
       });
     }
   };
+  */
 
   return (
     <div className="p-4 border-t border-surface-200 bg-surface-50">
