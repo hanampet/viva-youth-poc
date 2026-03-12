@@ -1,10 +1,9 @@
 export type SessionStage =
-  | 'IDLE'
-  | 'WELCOME'
-  | 'EMOTION_RELEASE'
-  | 'DEEP_EXPLORATION'
-  | 'HEALING_PREP'
-  | 'OUTRO';
+  | 'IDLE'           // 대기
+  | 'WELCOME'        // 환영 인사
+  | 'EMOTION_CHECK'  // 감정 확인 (LLM 판단)
+  | 'HEALING_PREP'   // 힐링 영상 추천 (LLM 판단)
+  | 'OUTRO';         // 마무리
 
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
 

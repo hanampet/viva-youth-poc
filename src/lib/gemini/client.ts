@@ -82,7 +82,7 @@ export class GeminiLiveClient {
         generationConfig: {
           responseModalities: ['AUDIO'],
           thinkingConfig: {
-            thinkingBudget: 0,
+            thinkingBudget: -1,
           },
           speechConfig: {
             voiceConfig: {
@@ -132,12 +132,14 @@ export class GeminiLiveClient {
 
       // Check for setup complete
       if ('setupComplete' in message) {
+        console.log('[Gemini] Setup complete, pendingRestore:', !!this.pendingRestore);
         this.isSetupComplete = true;
         this.options.onSetupComplete?.();
         this.options.onConnectionChange?.(true);
 
         // 컨텍스트 복원이 있으면 실행
         if (this.pendingRestore) {
+          console.log('[Gemini] Calling restoreContext...');
           this.restoreContext(this.pendingRestore);
           this.pendingRestore = null;
         }
@@ -233,29 +235,15 @@ export class GeminiLiveClient {
     this.send(message);
   }
 
-  private restoreContext(context: RestoreContext): void {
-    if (!this.isSetupComplete || !this.ws) return;
+  private restoreContext(_context: RestoreContext): void {
+    if (!this.isSetupComplete || !this.ws) {
+      console.warn('[Gemini] restoreContext: not ready', { isSetupComplete: this.isSetupComplete, ws: !!this.ws });
+      return;
+    }
 
-    // 이전 대화를 Gemini 형식으로 변환
-    const turns = context.messages.map((m) => ({
-      role: m.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: m.content }],
-    }));
-
-    // 재개 프롬프트 추가
-    turns.push({
-      role: 'user',
-      parts: [{ text: context.resumePrompt }],
-    });
-
-    const message = {
-      clientContent: {
-        turns,
-        turnComplete: true,
-      },
-    };
-
-    this.send(message);
+    // 짧은 메시지 (긴 프롬프트는 빈 응답 반환)
+    console.log('[Gemini] Sending short resume trigger');
+    this.sendText('영상 다 봤어요. 마무리 인사해주세요.');
   }
 
   private send(message: object): void {

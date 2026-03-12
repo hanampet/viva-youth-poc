@@ -159,18 +159,24 @@ export function useGeminiLive() {
           userSpeechStartTimeRef.current = null;
           setInterimTranscript('');
 
-          // Session analyzer 비활성화 (thinkingBudget=0 사용 중)
-          // const thinking = thinkingRef.current;
-          // thinkingRef.current = '';
-          // analyzeRef.current(thinking);
+          // Thinking 내용 저장 (onTurnComplete에서 분석에 사용)
+          // thinkingRef는 리셋하지 않음 - onTurnComplete에서 사용 후 리셋
+          console.log('[Thinking]', thinkingRef.current || '(empty)');
         },
         onTurnComplete: () => {
           // AI 응답 완료 로그 (완성된 문장)
-          if (aiResponseTextRef.current.trim()) {
-            addLog('GEMINI', `AI: ${aiResponseTextRef.current.trim()}`);
+          const aiResponse = aiResponseTextRef.current.trim();
+          if (aiResponse) {
+            addLog('GEMINI', `AI: ${aiResponse}`);
           }
-          aiResponseTextRef.current = '';  // 리셋
 
+          // Session analyzer - AI 응답 완료 후 분석 (thinking + AI 응답 포함)
+          const thinking = thinkingRef.current;
+          thinkingRef.current = '';  // 리셋
+          console.log('[TurnComplete] Analyzing with AI response:', aiResponse.slice(0, 100));
+          analyzeRef.current(thinking, aiResponse);
+
+          aiResponseTextRef.current = '';  // 리셋
           streamingMessageIdRef.current = null;
           aiResponseStartTimeRef.current = null;  // AI 응답 시작 시점 리셋
           isInterruptedRef.current = false;  // 인터럽트 상태 리셋

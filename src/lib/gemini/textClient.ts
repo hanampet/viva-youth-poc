@@ -1,57 +1,30 @@
 import type { SessionStage } from '../../types/session';
 import type { SessionAnalysis } from '../../types/analysis';
-import { SESSION_STAGES } from '../../constants/sessionStages';
+import { type ScenarioType, getAnalysisPrompt, getAnalysisStages } from '../../constants/systemPrompts';
+import { getStagesForScenario } from '../../constants/sessionStages';
 
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
 
-// LLM이 판단하는 단계 (IDLE, OUTRO 제외)
-const LLM_CONTROLLED_STAGES = SESSION_STAGES.filter(
-  (s) => s.id !== 'IDLE' && s.id !== 'OUTRO'
-);
-
-const ANALYSIS_PROMPT = `당신은 AI 심리 케어 세션의 진행 단계를 **파악**하는 분석가입니다.
-
-## 세션 단계
-${LLM_CONTROLLED_STAGES.map((s) => `${s.order}. ${s.id}: ${s.label} (${s.description})`).join('\n')}
-
-**주의: OUTRO(마무리) 단계는 운영자가 수동으로 전환합니다. 절대 OUTRO를 선택하지 마세요.**
-
-## 핵심: AI Thinking 기반 단계 파악
-**AI의 thinking(내부 생각)을 보고 AI가 지금 어떤 단계를 진행하고 있는지 파악하세요.**
-- thinking에 "환영", "호흡", "상담 만족도" 언급 → WELCOME
-- thinking에 "마음 상태", "후련", "감정 해소" 언급 → EMOTION_RELEASE
-- thinking에 "처음과 비교", "변화", "전후" 언급 → DEEP_EXPLORATION
-- thinking에 "힐링 영상", "추천", "바다/숲/정원" 언급 → HEALING_PREP
-
-## 분석 규칙
-1. **AI thinking이 가장 중요한 판단 기준** - AI가 무엇을 하고 있는지 파악
-2. **단계는 한 단계씩만 진행** - 건너뛰기 금지
-3. AI의 thinking이 있다면 한국어로 한 문장 요약
-4. **HEALING_PREP이 마지막** - 힐링 영상 추천 후 유지
-
-## 대화 모드
-- "상담": 일반적인 심리 상담 대화
-- "기술 문의": 시스템, AI, 기술에 대한 질문
-- "잡담": 상담과 무관한 일상 대화`;
-
-const RESPONSE_SCHEMA = {
-  type: 'object',
-  properties: {
-    currentStage: {
-      type: 'string',
-      enum: ['WELCOME', 'EMOTION_RELEASE', 'DEEP_EXPLORATION', 'HEALING_PREP'],
-      description: '현재 세션 단계 (IDLE, OUTRO 제외)',
+const getResponseSchema = (scenario: ScenarioType) => {
+  return {
+    type: 'object',
+    properties: {
+      currentStage: {
+        type: 'string',
+        enum: getAnalysisStages(scenario),
+        description: '현재 세션 단계 (IDLE, OUTRO 제외)',
+      },
+      conversationMode: {
+        type: 'string',
+        description: '현재 대화 모드',
+      },
+      thinkingSummary: {
+        type: 'string',
+        description: 'AI thinking 요약 (있는 경우)',
+      },
     },
-    conversationMode: {
-      type: 'string',
-      description: '현재 대화 모드 (상담, 기술 문의, 시스템 설명, 잡담 등)',
-    },
-    thinkingSummary: {
-      type: 'string',
-      description: 'AI thinking 요약 (있는 경우)',
-    },
-  },
-  required: ['currentStage', 'conversationMode'],
+    required: ['currentStage', 'conversationMode'],
+  };
 };
 
 interface Message {
@@ -62,43 +35,66 @@ interface Message {
 interface AnalyzeOptions {
   messages: Message[];
   currentStage: SessionStage;
+  scenario: ScenarioType;
   thinking?: string;
+  aiResponse?: string;
 }
 
 export async function analyzeSession(
   apiKey: string,
   options: AnalyzeOptions
 ): Promise<SessionAnalysis | null> {
-  const { messages, currentStage, thinking } = options;
+  const { messages, currentStage, scenario, thinking, aiResponse } = options;
 
   if (messages.length === 0) {
+    console.log('[TextLLM] Skipped: no messages');
     return null;
   }
 
-  // IDLE 또는 OUTRO 단계에서는 분석하지 않음 (운영자가 제어)
-  if (currentStage === 'IDLE' || currentStage === 'OUTRO') {
+  // IDLE 단계에서는 분석하지 않음 (운영자가 제어)
+  if (currentStage === 'IDLE') {
+    console.log('[TextLLM] Skipped: IDLE stage');
     return null;
   }
 
-  // 현재 단계 정보와 다음 단계 계산
-  const currentInfo = SESSION_STAGES.find((s) => s.id === currentStage);
-  const nextStageInfo = SESSION_STAGES.find((s) => s.order === (currentInfo?.order ?? 0) + 1);
+  // 힐링룸: OUTRO 단계에서는 분석하지 않음 (영상 후 운영자가 전환)
+  if (scenario === 'healing' && currentStage === 'OUTRO') {
+    console.log('[TextLLM] Skipped: OUTRO stage (healing)');
+    return null;
+  }
+
+  const stages = getStagesForScenario(scenario);
+  const currentInfo = stages.find((s) => s.id === currentStage);
+  const nextStageInfo = stages.find((s) => s.order === (currentInfo?.order ?? 0) + 1);
+
+  console.log('[TextLLM] Stage info:', { currentStage, nextStage: nextStageInfo?.id });
+
+  // 힐링룸: OUTRO 직전 단계(HEALING_PREP)면 분석하지 않음 (운영자가 전환)
+  if (scenario === 'healing' && nextStageInfo?.id === 'OUTRO') {
+    console.log('[TextLLM] Skipped: next is OUTRO (healing)');
+    return null;
+  }
 
   const conversationText = messages
-    .slice(-6) // 최근 6개 메시지만
+    .slice(-6)
     .map((m) => `${m.role === 'user' ? '사용자' : 'AI'}: ${m.content}`)
     .join('\n');
 
   const userPrompt = `## 현재 상태
+- 시나리오: ${scenario === 'interview' ? '면접연습' : '힐링룸'}
 - 현재 세션 단계: ${currentStage} (${currentInfo?.label})
 - 가능한 다음 단계: ${nextStageInfo ? `${nextStageInfo.id} (${nextStageInfo.label})` : '없음 (마지막 단계)'}
 
-${thinking ? `## AI Thinking (중요! 이것을 보고 단계를 파악하세요)\n${thinking.slice(0, 500)}` : ''}
+${aiResponse ? `## AI 응답 (가장 중요! 이것을 보고 단계를 파악하세요)\n${aiResponse}` : ''}
+
+${thinking ? `## AI Thinking\n${thinking.slice(0, 500)}` : ''}
 
 ## 참고: 최근 대화
 ${conversationText}
 
-**AI의 thinking을 분석하여** AI가 지금 진행하고 있는 단계를 파악하세요.
+**AI 응답 내용을 분석하여** AI가 지금 진행하고 있는 단계를 파악하세요.
+- 힐링룸에서 "영상", "바다", "명상", "추천" 등의 키워드가 있으면 HEALING_PREP 단계입니다.
+- 면접연습에서 마무리 인사, 격려, 응원의 말이 있으면 OUTRO 단계입니다.
 currentStage는 현재 단계(${currentStage}) 또는 다음 단계(${nextStageInfo?.id || currentStage}) 중 하나만 선택하세요.`;
 
   try {
@@ -107,10 +103,10 @@ currentStage는 현재 단계(${currentStage}) 또는 다음 단계(${nextStageI
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
-        systemInstruction: { parts: [{ text: ANALYSIS_PROMPT }] },
+        systemInstruction: { parts: [{ text: getAnalysisPrompt(scenario) }] },
         generationConfig: {
           responseMimeType: 'application/json',
-          responseSchema: RESPONSE_SCHEMA,
+          responseSchema: getResponseSchema(scenario),
         },
       }),
     });
@@ -131,21 +127,19 @@ currentStage는 현재 단계(${currentStage}) 또는 다음 단계(${nextStageI
     const result = JSON.parse(text) as SessionAnalysis;
 
     // 단계 점프 방지: 한 단계씩만 진행 가능
-    const resultStageInfo = SESSION_STAGES.find((s) => s.id === result.currentStage);
+    const resultStageInfo = stages.find((s) => s.id === result.currentStage);
     if (resultStageInfo && currentInfo) {
       const stageDiff = resultStageInfo.order - currentInfo.order;
       if (stageDiff > 1) {
-        // 2단계 이상 점프 시 다음 단계로 제한
         result.currentStage = nextStageInfo?.id || currentStage;
       } else if (stageDiff < 0) {
-        // 뒤로 가는 것 방지
         result.currentStage = currentStage;
       }
     }
 
-    // HEALING_PREP 이후로 넘어가지 않도록 (OUTRO는 운영자가 제어)
-    if (result.currentStage === 'OUTRO') {
-      result.currentStage = 'HEALING_PREP';
+    // 힐링룸: OUTRO로 넘어가지 않도록 (운영자가 영상 후 전환)
+    if (scenario === 'healing' && result.currentStage === 'OUTRO') {
+      result.currentStage = currentStage;
     }
 
     return result;
